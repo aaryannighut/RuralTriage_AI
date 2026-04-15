@@ -35,8 +35,22 @@ class DoctorOut(DoctorIn):
 
 
 @router.get("/", response_model=list[DoctorOut])
-def list_doctors(db: Session = Depends(get_db)):
+def list_doctors(query: str = None, db: Session = Depends(get_db)):
+    if query:
+        return db.query(Doctor).filter(
+            (Doctor.name.ilike(f"%{query}%")) |
+            (Doctor.specialty.ilike(f"%{query}%")) |
+            (Doctor.qualification.ilike(f"%{query}%"))
+        ).all()
     return db.query(Doctor).all()
+
+@router.get("/search", response_model=list[DoctorOut])
+def search_doctors(query: str, db: Session = Depends(get_db)):
+    return db.query(Doctor).filter(
+        (Doctor.name.ilike(f"%{query}%")) |
+        (Doctor.specialty.ilike(f"%{query}%")) |
+        (Doctor.qualification.ilike(f"%{query}%"))
+    ).all()
 
 
 @router.post("/", response_model=DoctorOut, status_code=201)

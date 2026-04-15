@@ -12,12 +12,22 @@ const SIGNAL_WS_BASE = toWsUrl("/ws/signal");
 const BACKEND_LABEL = API_BASE_URL || window.location.origin;
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
+  { 
+    urls: "turn:openrelay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject"
+  }
 ];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type CallStatus = "idle" | "connecting" | "waiting" | "connected" | "failed" | "ended";
+
+interface LogEntry {
+  time: string;
+  msg: string;
+  type: "info" | "error" | "success";
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -123,17 +133,19 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
   const wsRef     = useRef<WebSocket | null>(null);
   const roleRef   = useRef<"initiator" | "receiver" | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const candidateQueue = useRef<RTCIceCandidateInit[]>([]);
 
   const [status,   setStatus]  = useState<CallStatus>("connecting");
   const [micOn,    setMicOn]   = useState(true);
   const [camOn,    setCamOn]   = useState(true);
   const [copied,     setCopied]    = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [log,        setLog]       = useState<string[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [peers,      setPeers]     = useState(0);
 
-  const addLog = useCallback((msg: string) => {
-    setLog(p => [...p.slice(-6), `${new Date().toLocaleTimeString()} — ${msg}`]);
+  const addLog = useCallback((msg: string, type: "info" | "error" | "success" = "info") => {
+    const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setLogs(prev => [...prev.slice(-10), { time, msg, type }]);
   }, []);
 
   const endCall = useCallback(() => {
@@ -148,17 +160,17 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
     let ws: WebSocket;
 
     async function start() {
-      addLog("Requesting camera/mic…");
+      addLog("Requesting hardware access...", "info");
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        addLog("Got video + audio");
+        addLog("Video + Audio stream captured", "success");
       } catch {
         try {
           stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          addLog("Camera denied — audio only");
+          addLog("Camera blocked, using audio only", "info");
         } catch {
-          addLog("Media access denied");
+          addLog("Media access rejected", "error");
           setStatus("failed");
           return;
         }
@@ -166,6 +178,7 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
       streamRef.current = stream;
       if (localRef.current) localRef.current.srcObject = stream;
 
+      addLog("Initializing P2P link...", "info");
       pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
       pcRef.current = pc;
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
@@ -173,44 +186,38 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
       pc.ontrack = (ev) => {
         if (remoteRef.current) remoteRef.current.srcObject = ev.streams[0];
         setStatus("connected");
-        addLog("Remote stream received ✅");
+        addLog("Remote stream received ✅", "success");
       };
 
       pc.onicecandidate = (ev) => {
         if (ev.candidate && wsRef.current?.readyState === WebSocket.OPEN) {
           wsRef.current.send(JSON.stringify({ type: "ice-candidate", candidate: ev.candidate }));
-          addLog("Sent ICE candidate");
         }
       };
 
-      pc.oniceconnectionstatechange = () => {
-        addLog(`ICE: ${pc.iceConnectionState}`);
-      };
-
       pc.onconnectionstatechange = () => {
-        addLog(`Peer: ${pc.connectionState}`);
+        addLog(`P2P State: ${pc.connectionState}`, "info");
         if (pc.connectionState === "failed") setStatus("failed");
         if (pc.connectionState === "disconnected") setStatus("ended");
       };
 
-      addLog(`Connecting to signal server — room ${roomId}…`);
-      ws = new WebSocket(`${SIGNAL_WS_BASE}/${roomId}`);
+      const wsUrl = `${SIGNAL_WS_BASE}/${roomId}`;
+      addLog(`Signaling: ${wsUrl}`, "info");
+      ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
-      ws.onopen = () => addLog("Signal WS open");
-      ws.onerror = () => { addLog("Signal WS error ❌"); setStatus("failed"); };
+      ws.onopen = () => addLog("WS Handshake active", "success");
+      ws.onerror = () => { addLog("Signal WS error ❌", "error"); setStatus("failed"); };
 
       ws.onmessage = async (ev) => {
         const msg = JSON.parse(ev.data as string);
-        addLog(`← ${msg.type}`);
 
         switch (msg.type) {
           case "joined":
             roleRef.current = msg.role;
             setPeers(msg.peers);
             setStatus("waiting");
-            addLog(`Role: ${msg.role}`);
-            // Receiver signals ready immediately after setup
+            addLog(`Joined as ${msg.role}`, "info");
             if (msg.role === "receiver") {
               ws.send(JSON.stringify({ type: "ready" }));
             }
@@ -218,66 +225,72 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
 
           case "peer-joined":
             setPeers(2);
-            // Initiator creates offer; receiver sends ready signal
+            addLog("Peer detected", "success");
             if (roleRef.current === "initiator") {
-              addLog("Creating offer…");
               const offer = await pc.createOffer();
               await pc.setLocalDescription(offer);
               ws.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
-              addLog("→ offer sent");
+              addLog("Offer dispatched", "info");
             } else {
-              // Receiver: signal ready so initiator knows to (re)send offer
               ws.send(JSON.stringify({ type: "ready" }));
             }
             break;
 
           case "ready":
-            // Only the initiator acts on this
             if (roleRef.current === "initiator" && !pc.localDescription) {
-              addLog("Receiver ready — creating offer…");
+              addLog("Peer ready, creating offer", "info");
               const offer = await pc.createOffer();
               await pc.setLocalDescription(offer);
               ws.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
-              addLog("→ offer sent");
             }
             break;
 
           case "offer":
-            addLog("Got offer, sending answer…");
+            addLog("Offer received", "info");
             await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: msg.sdp }));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             ws.send(JSON.stringify({ type: "answer", sdp: answer.sdp }));
-            addLog("→ answer sent");
+            addLog("Answer dispatched", "info");
+            while (candidateQueue.current.length) {
+              const cand = candidateQueue.current.shift();
+              if (cand) await pc.addIceCandidate(new RTCIceCandidate(cand));
+            }
             break;
 
           case "answer":
-            addLog("Got answer");
+            addLog("Answer received", "info");
             await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: msg.sdp }));
+            while (candidateQueue.current.length) {
+                const cand = candidateQueue.current.shift();
+                if (cand) await pc.addIceCandidate(new RTCIceCandidate(cand));
+            }
             break;
 
           case "ice-candidate":
-            try {
-              await pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
-              addLog("Added ICE candidate");
-            } catch { /* ignore */ }
+            if (pc.remoteDescription) {
+              try { await pc.addIceCandidate(new RTCIceCandidate(msg.candidate)); } catch { /* ignore */ }
+            } else {
+              candidateQueue.current.push(msg.candidate);
+            }
             break;
 
           case "peer-left":
             setStatus("ended");
-            addLog("Other peer left");
+            addLog("Peer disconnected", "error");
             break;
 
           case "room-full":
             setStatus("failed");
-            addLog("Room is full ❌");
+            addLog("Room capacity reached ❌", "error");
             break;
         }
       };
     }
 
     start().catch(err => {
-      addLog(`Error: ${err}`);
+      console.error(err);
+      addLog("Setup failed", "error");
       setStatus("failed");
     });
 
@@ -412,15 +425,20 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
         </div>
 
         {/* Debug log */}
-        <div className="hidden lg:flex flex-col lg:w-72 bg-[#0D1829] rounded-md border border-white/10 p-4 gap-2">
+        <div className="hidden lg:flex flex-col lg:w-72 bg-[#0D1829] rounded-md border border-white/10 p-4 gap-2 font-mono">
           <div className="text-xs font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Connection Log</div>
           <div className="flex-1 overflow-y-auto space-y-1.5 min-h-0">
-            {log.length === 0 && <p className="text-[#334155] text-xs italic">Waiting for events…</p>}
-            {log.map((l, i) => (
-              <p key={i} className="text-xs font-mono text-[#94A3B8] leading-relaxed">{l}</p>
+            {logs.length === 0 && <p className="text-[#334155] text-xs italic uppercase">Idle</p>}
+            {logs.map((l, i) => (
+              <div key={i} className="text-[10px] flex gap-2">
+                <span className="text-slate-600 shrink-0">{l.time}</span>
+                <span className={`break-words ${l.type === "error" ? "text-rose-400" : l.type === "success" ? "text-emerald-400" : "text-slate-400"}`}>
+                   {l.msg}
+                </span>
+              </div>
             ))}
           </div>
-          <div className="pt-2 border-t border-white/10 text-[10px] text-[#334155] font-mono">
+          <div className="pt-2 border-t border-white/10 text-[10px] text-[#334155] uppercase font-black">
             room: {roomId} · role: {roleRef.current ?? "—"}
           </div>
         </div>

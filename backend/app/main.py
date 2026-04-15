@@ -24,6 +24,7 @@ from app.routes.patient_routes import router as patient_router
 from app.routes.pharmacist_routes import router as pharmacist_router
 from app.routes.pharmacy_routes import router as pharmacy_router
 from app.routes.medicine_search_routes import router as medicine_search_router
+from app.routes.appointment_routes import router as appointment_router
 
 BASE_DIR = Path(__file__).parent
 
@@ -56,7 +57,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -75,6 +76,7 @@ app.include_router(patient_router)
 app.include_router(pharmacist_router)
 app.include_router(pharmacy_router)
 app.include_router(medicine_search_router, prefix="/medicines", tags=["Medicines"])
+app.include_router(appointment_router)
 
 # このアプリケーションのログ設定
 root_logger = logging.getLogger("app")
@@ -226,16 +228,19 @@ async def webrtc_signal(websocket: WebSocket, room_id: str):
 
     if room_id not in rooms:
         rooms[room_id] = []
+        root_logger.info(f"Signaling: Room {room_id} created.")
 
     room = rooms[room_id]
 
     if len(room) >= 2:
+        root_logger.warning(f"Signaling: Room {room_id} full. Rejecting connection.")
         await websocket.send_json({"type": "room-full"})
         await websocket.close()
         return
 
     position = len(room)   # 0 = initiator, 1 = receiver
     room.append(websocket)
+    root_logger.info(f"Signaling: Peer joined room {room_id}. Position: {position}. Total: {len(room)}")
 
     # Tell this peer its role
     await websocket.send_json({
@@ -244,42 +249,46 @@ async def webrtc_signal(websocket: WebSocket, room_id: str):
         "peers": len(room),
     })
 
-    # If this is the second peer, notify ALL peers that the room is full.
-    # The initiator (peer 0) must wait for a "ready" message from the receiver
-    # before creating the offer — this avoids the race where the offer arrives
-    # before the receiver's onmessage handler is attached.
     if len(room) == 2:
+        root_logger.info(f"Signaling: Room {room_id} now full. Notifying peers.")
         for peer in list(room):
             try:
                 await peer.send_json({"type": "peer-joined", "peers": 2})
-            except Exception:
-                pass
+            except Exception as e:
+                root_logger.error(f"Signaling: Failed to notify peer in room {room_id}: {e}")
 
     try:
         while True:
             data = await websocket.receive_json()
             # Relay to every other peer in the room (not back to sender)
+            msg_type = data.get("type", "unknown")
+            # root_logger.debug(f"Signaling: Relaying {msg_type} in room {room_id}")
+            
             for peer in list(room):
                 if peer is websocket:
                     continue
                 try:
                     await peer.send_json(data)
-                except Exception:
-                    pass
+                except Exception as e:
+                    root_logger.error(f"Signaling: Relay failed for {msg_type} in room {room_id}: {e}")
     except WebSocketDisconnect:
         if websocket in room:
             room.remove(websocket)
+        root_logger.info(f"Signaling: Peer left room {room_id}. Remaining: {len(room)}")
+        
         # Notify remaining peer
         for peer in list(room):
             try:
                 await peer.send_json({"type": "peer-left"})
-            except Exception:
-                pass
+            except Exception as e:
+                root_logger.error(f"Signaling: Failed to notify remaining peer in room {room_id}: {e}")
+        
         # Clean up empty room
-        if not rooms.get(room_id):
+        if not room:
             rooms.pop(room_id, None)
+            root_logger.info(f"Signaling: Room {room_id} destroyed.")
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

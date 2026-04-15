@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, Upload, AlertCircle, Download, Trash2, Eye, Image as ImageIcon } from "lucide-react";
+import { FileText, Upload, AlertCircle, Download, Trash2, Eye, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 interface HealthRecordItem {
@@ -61,21 +61,22 @@ export function HealthRecords() {
 
   useEffect(() => {
     const fetchRecords = async () => {
-      if (!user.userId) {
-        setRecordError("Authentication Fault: Patient login required.");
+      const activeUserId = user?.userId || (user as any)?.id;
+      if (!activeUserId) {
+        setRecordError("Authentication Fault: Patient identity not synchronized. Please re-login.");
         setRecordsLoading(false);
         return;
       }
       try {
-        const res = await fetch(`/patients/by-user/${user.userId}`);
-        if (!res.ok) throw new Error("Failed to fetch health records");
+        const res = await fetch(`/patients/user/${activeUserId}`);
+        if (!res.ok) throw new Error("Failed to synchronize health repository from master mainframe.");
         const data: PatientData = await res.json();
         setPatient(data); setRecords(normalizeRecords(data.health_records));
       } catch (err) { setRecordError(err instanceof Error ? err.message : "Network failure"); }
       finally { setRecordsLoading(false); }
     };
     fetchRecords();
-  }, [user.userId]);
+  }, [user.userId, (user as any)?.id]);
 
   const saveRecordsToBackend = async (nextRecords: HealthRecordItem[]) => {
     if (!patient) throw new Error("Patient profile not found");

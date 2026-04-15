@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Boolean, String, Numeric, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, Boolean, String, Numeric, ForeignKey, DateTime, func
 from sqlalchemy import JSON
 from app.database import Base
 
@@ -62,6 +62,7 @@ class Patient(Base):
     health_metrics = Column(JSON, default=dict)
     health_records = Column(JSON, default=list)
     prescriptions  = Column(JSON, default=list)
+    family_doctor_id = Column(Integer, ForeignKey("doctors.id"), nullable=True)
 
 
 class SymptomRecord(Base):
@@ -129,3 +130,22 @@ class Medicine(Base):
     manufacturer         = Column(String, default="")
     expiry               = Column(String, default="")     # stored as "YYYY-MM"
     prescription_required = Column(Boolean, default=False)
+
+
+# -------------------------
+# Appointment Table
+# -------------------------
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    patient_id   = Column(Integer, ForeignKey("patients.id"), nullable=False, index=True)
+    doctor_id    = Column(Integer, ForeignKey("doctors.id"), nullable=False, index=True)
+    doctor_name  = Column(String, nullable=False)
+    specialty    = Column(String, nullable=False)
+    date         = Column(String, nullable=False)
+    time         = Column(String, nullable=False)
+    status       = Column(String, default="Scheduled") # Scheduled | Completed | Cancelled
+    meeting_link = Column(String, nullable=True)
+    created_at   = Column(DateTime, default=func.now())

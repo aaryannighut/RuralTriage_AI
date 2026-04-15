@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Patient, SymptomRecord
+from app.models import Patient, SymptomRecord, User
 from app.settings import Settings
 
 _settings = Settings()
@@ -19,28 +19,57 @@ router = APIRouter(prefix="/patients", tags=["Patients"])
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 SYMPTOM_MASTER_PROMPT = """
-You are a careful medical information assistant.
+You are a highly capable AI Symptom Triage Assistant. Your objective is to analyze patient symptoms and provide a structured, clinical-style assessment.
 
-Your role:
-Explain what medical conditions MIGHT be associated with the patient's symptoms.
+### YOUR ROLE:
+1. Provide a brief summary of the patient's state.
+2. Identify possible conditions (suggestive only, not diagnostic).
+3. Explain why the symptoms match those conditions.
+4. Offer medical advice (always include a recommendation to consult a doctor).
+5. Outline actionable next steps.
+6. Provide specific precautions for the next 2–3 days.
 
-STRICT RULES:
-- Do NOT give a definitive diagnosis.
-- Only suggest POSSIBLE conditions based on symptoms.
-- If uncertain, say that the symptoms are not enough for a clear conclusion.
-- Do NOT invent symptoms or patient history.
-- Do NOT suggest specific medicines.
-- Encourage consulting a doctor when appropriate.
-- Be calm and reassuring.
+### OUTPUT FORMAT:
+You MUST respond with a valid JSON object ONLY. Do not include any text before or after the JSON.
+The JSON structure:
+{
+  "summary": "1–2 line concise summary",
+  "possible_conditions": ["Condition 1", "Condition 2"],
+  "explanation": ["Reason 1", "Reason 2"],
+  "medical_advice": ["Advice 1", "Advice 2"],
+  "next_steps": ["Step 1", "Step 2"],
+  "risk_level": "Low | Medium | High",
+  "precautions": ["Precaution 1", "Precaution 2"]
+}
 
-Response format:
-1. Brief explanation of what the symptoms may indicate.
-2. List possible conditions with short explanation.
-3. Explain why these conditions might match the symptoms.
-4. Mention that only a doctor can confirm diagnosis.
-5. Suggest next steps (doctor visit, tests, monitoring symptoms).
+### RULES:
+- If symptoms are severe (chest pain, breathing issues), set risk_level to "High".
+- Be professional, clinical, and reassuring.
+- Do NOT provide a definitive diagnosis.
+- Ensure all precautions are actionable.
+"""
 
-Use simple English that patients can understand.
+FOLLOWUP_MASTER_PROMPT = """
+You are a highly capable clinical assistant. You are reviewing a previous triage assessment and a user's follow-up query.
+
+### YOUR ROLE:
+1. Analyze the user's new query in the context of the previous triage.
+2. Provide an UPDATED triage assessment that incorporates the new information.
+3. Refine the risk level, conditions, and precautions if necessary.
+
+### OUTPUT FORMAT:
+You MUST respond with a valid JSON object ONLY, following the EXACT same structure as the initial triage.
+{
+  "summary": "Updated summary including new details",
+  "possible_conditions": [...],
+  "explanation": [...],
+  "medical_advice": [...],
+  "next_steps": [...],
+  "risk_level": "Low | Medium | High",
+  "precautions": [...]
+}
+
+Ensure the response remains clinical, structured, and includes a mandatory "consult a doctor" advice.
 """
 
 
@@ -112,7 +141,24 @@ def patient_to_response(patient: Patient, db: Session) -> dict[str, Any]:
         "health_metrics": patient.health_metrics or {},
         "health_records": patient.health_records or [],
         "prescriptions": patient.prescriptions or [],
+        "family_doctor_id": patient.family_doctor_id,
     }
+
+
+class FamilyDoctorIn(BaseModel):
+    patient_id: int
+    doctor_id: int
+
+@router.post("/family-doctor")
+def set_family_doctor(data: FamilyDoctorIn, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.id == data.patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    patient.family_doctor_id = data.doctor_id
+    db.commit()
+    db.refresh(patient)
+    return {"message": "Family doctor updated successfully", "family_doctor_id": patient.family_doctor_id}
 
 
 class PatientIn(BaseModel):
@@ -184,6 +230,25 @@ def get_patient(patient_id: int, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+    migrate_legacy_symptoms(patient, db)
+    return patient_to_response(patient, db)
+
+
+@router.get("/user/{user_id}", response_model=PatientOut)
+def get_patient_by_user_id(user_id: int, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.user_id == user_id).first()
+    
+    if not patient:
+        # Auto-create profile if missing for a valid user
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        patient = Patient(user_id=user.id, name=user.name)
+        db.add(patient)
+        db.commit()
+        db.refresh(patient)
+        
     migrate_legacy_symptoms(patient, db)
     return patient_to_response(patient, db)
 
@@ -322,7 +387,49 @@ class SymptomAnalysisIn(BaseModel):
     duration: str
 
 
-@router.post("/ai/symptom-analysis")
+class TriageResponse(BaseModel):
+    summary: str
+    possible_conditions: list[str]
+    explanation: list[str]
+    medical_advice: list[str]
+    next_steps: list[str]
+    risk_level: str
+    precautions: list[str]
+
+
+class FollowUpIn(BaseModel):
+    previous_analysis: TriageResponse
+    user_query: str
+
+
+def calculate_risk_level(symptoms: list[str], duration: str) -> str:
+    """
+    Initial risk evaluation based on symptoms and duration.
+    - LOW: mild symptoms (1-2), short duration (< 24h)
+    - MEDIUM: fever + cough, or moderate duration (1-3 days)
+    - HIGH: severe symptoms (chest pain, breathing issues) or long duration (>3 days)
+    """
+    symptoms_lower = [s.lower() for s in symptoms]
+    
+    # Severe symptoms check
+    severe_indicators = ["chest pain", "breathing", "shortness of breath", "severe vomiting", "unconscious"]
+    if any(any(ind in s for ind in severe_indicators) for s in symptoms_lower):
+        return "High"
+    
+    if "vomiting" in symptoms_lower: # User specifically mentioned vomiting as severe in one of the prompts
+         return "High"
+
+    duration_lower = duration.lower()
+    if "more than 7 days" in duration_lower or "4-7 days" in duration_lower:
+        return "High"
+    
+    if ("fever" in symptoms_lower and "cough" in symptoms_lower) or "1-3 days" in duration_lower or len(symptoms) >= 3:
+        return "Medium"
+        
+    return "Low"
+
+
+@router.post("/ai/symptom-analysis", response_model=TriageResponse)
 async def analyze_symptoms(data: SymptomAnalysisIn):
     import json as _json
     from urllib import request, error
@@ -333,12 +440,16 @@ async def analyze_symptoms(data: SymptomAnalysisIn):
 
     model = _settings.GROQ_MODEL or "llama-3.3-70b-versatile"
     symptom_text = ", ".join(data.symptom_names)
+    
+    calculated_risk = calculate_risk_level(data.symptom_names, data.duration)
 
     user_prompt = f"""
 Patient symptoms: {symptom_text}
 Duration: {data.duration}
+Preliminary Risk Assessment: {calculated_risk}
 
-Explain what possible health conditions these symptoms may indicate.
+Please provide a detailed clinical analysis in JSON format. 
+Ensure the risk_level in your response matches or refines the Preliminary Risk Assessment provided.
 """
 
     try:
@@ -348,6 +459,7 @@ Explain what possible health conditions these symptoms may indicate.
                 {"role": "system", "content": SYMPTOM_MASTER_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
+            "response_format": {"type": "json_object"}
         }
 
         req = request.Request(
@@ -373,13 +485,84 @@ Explain what possible health conditions these symptoms may indicate.
         if "choices" not in result:
             raise HTTPException(status_code=500, detail=f"AI API Error: {result}")
 
-        ai_output = result["choices"][0]["message"]["content"]
+        ai_output_str = result["choices"][0]["message"]["content"]
+        
+        try:
+            ai_data = _json.loads(ai_output_str)
+            # Ensure the structure matches TriageResponse
+            return TriageResponse(**ai_data)
+        except (_json.JSONDecodeError, ValueError) as e:
+             raise HTTPException(status_code=500, detail=f"AI returned invalid JSON: {str(e)}\nOutput: {ai_output_str}")
 
-        return {
-            "symptoms": data.symptom_names,
-            "duration": data.duration,
-            "analysis": ai_output,
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=f"Internal Failure: {str(e)}\n{traceback.format_exc()}")
+@router.post("/triage/followup", response_model=TriageResponse)
+async def analyze_followup(data: FollowUpIn):
+    import json as _json
+    from urllib import request, error
+
+    api_key = _settings.GROQ_API_KEY
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY is not configured")
+
+    model = _settings.GROQ_MODEL or "llama-3.3-70b-versatile"
+    
+    context_text = _json.dumps(data.previous_analysis.model_dump(), indent=2)
+
+    user_prompt = f"""
+### PREVIOUS ANALYSIS:
+{context_text}
+
+### USER FOLLOW-UP QUERY:
+{data.user_query}
+
+Please provide an updated triage assessment in JSON format based on the new query.
+"""
+
+    try:
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": FOLLOWUP_MASTER_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+            "response_format": {"type": "json_object"}
         }
+
+        req = request.Request(
+            GROQ_API_URL,
+            data=_json.dumps(payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "User-Agent": "RuralTriageAI/1.0",
+            },
+            method="POST",
+        )
+
+        try:
+            with request.urlopen(req, timeout=60) as resp:
+                result = _json.loads(resp.read().decode("utf-8"))
+        except error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="ignore")
+            raise HTTPException(status_code=500, detail=f"Groq HTTP {exc.code}: {body}")
+        except error.URLError as exc:
+            raise HTTPException(status_code=500, detail=f"Groq request failed: {exc.reason}")
+
+        if "choices" not in result:
+            raise HTTPException(status_code=500, detail=f"AI API Error: {result}")
+
+        ai_output_str = result["choices"][0]["message"]["content"]
+        
+        try:
+            ai_data = _json.loads(ai_output_str)
+            return TriageResponse(**ai_data)
+        except (_json.JSONDecodeError, ValueError) as e:
+             raise HTTPException(status_code=500, detail=f"AI returned invalid JSON: {str(e)}\nOutput: {ai_output_str}")
+
     except HTTPException:
         raise
     except Exception as e:
