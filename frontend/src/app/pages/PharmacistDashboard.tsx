@@ -72,7 +72,7 @@ export function PharmacistDashboard() {
   const [profile, setProfile] = useState<PharmacyProfile | null>(null);
   const [inventory, setInventory] = useState<Medicine[]>([]);
   const [rxList, setRxList] = useState<IncomingPrescription[]>([]);
-  const [stats, setStats] = useState({ total_sku: 0, pending_requests: 0, market_status: "active" });
+  const [stats, setStats] = useState({ total_inventory: 0, active_requests: 0, low_stock: 0, market_status: "active" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"dispensary" | "inventory" | "history">("dispensary");
@@ -85,6 +85,11 @@ export function PharmacistDashboard() {
   // Selected Rx for detailed processing
   const [selectedRx, setSelectedRx] = useState<IncomingPrescription | null>(null);
   const [processingStatus, setProcessingStatus] = useState(false);
+
+  // Inventory Modal States
+  const [showInvModal, setShowInvModal] = useState(false);
+  const [invFormData, setInvFormData] = useState({ id: null as number | null, medicine_name: "", quantity: "" as string | number, price: "" as string | number, expiry_date: "" });
+  const [savingInv, setSavingInv] = useState(false);
 
   useEffect(() => {
     const hash = location.hash.replace("#", "");
@@ -102,10 +107,10 @@ export function PharmacistDashboard() {
       setProfile(profData);
 
       const [invRes, rxRes, statsRes, histRes] = await Promise.all([
-        fetch(`/pharmacy/inventory/${profData.id}`),
-        fetch(`/pharmacy/prescriptions/${profData.id}`),
-        fetch(`/pharmacy/dashboard/stats?pharmacy_id=${profData.id}`),
-        fetch(`/pharmacy/history/${profData.id}`)
+        fetch(`/pharmacies/pharmacy/inventory/${profData.id}`),
+        fetch(`/pharmacies/pharmacy/prescriptions/${profData.id}`),
+        fetch(`/pharmacies/pharmacy/dashboard/stats?pharmacy_id=${profData.id}`),
+        fetch(`/pharmacies/pharmacy/transactions/${profData.id}`)
       ]);
 
       if (invRes.ok) {
@@ -148,7 +153,7 @@ export function PharmacistDashboard() {
   const handleUpdateStatus = async (rxId: string, status: string) => {
     setProcessingStatus(true);
     try {
-      const res = await fetch(`/pharmacy/prescription/${rxId}`, {
+      const res = await fetch(`/pharmacies/pharmacy/prescription/${rxId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
@@ -164,6 +169,92 @@ export function PharmacistDashboard() {
     } finally {
       setProcessingStatus(false);
     }
+  };
+
+  const isExpiringSoon = (expiryStr: string) => {
+    if (!expiryStr) return false;
+    const expiryDate = new Date(expiryStr);
+    if (isNaN(expiryDate.getTime())) return false;
+    const diffTime = expiryDate.getTime() - new Date().getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 && diffDays <= 30;
+  };
+
+  const exportHistoryCSV = () => {
+    if (historyList.length === 0) return;
+    const headers = ["Date", "Medicine", "Quantity Change", "Action"];
+    const rows = historyList.map(txn => {
+      const d = txn.date ? new Date(txn.date).toLocaleString() : "N/A";
+      return `"${d}","${txn.medicine}","${txn.quantity_change}","${txn.action}"`;
+    });
+    const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Dispensary_Ledger_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSaveInventory = async () => {
+    if (!profile) return;
+    setSavingInv(true);
+    try {
+      const q = parseInt(invFormData.quantity.toString()) || 0;
+      const p = parseFloat(invFormData.price.toString()) || 0;
+
+      if (invFormData.id) {
+         // Update
+         const res = await fetch(`/pharmacies/pharmacy/inventory/update/${invFormData.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ quantity: q, price: p, expiry_date: invFormData.expiry_date })
+         });
+         if (!res.ok) throw new Error("Failed to update inventory.");
+      } else {
+         // Add
+         const res = await fetch(`/pharmacies/pharmacy/inventory/add`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                pharmacy_id: profile.id, 
+                medicine_name: invFormData.medicine_name, 
+                quantity: q, 
+                price: p, 
+                expiry_date: invFormData.expiry_date 
+            })
+         });
+         if (!res.ok) throw new Error("Failed to add inventory.");
+      }
+      setShowInvModal(false);
+      fetchData();
+    } catch(err: any) {
+      alert(err.message);
+    } finally {
+      setSavingInv(false);
+    }
+  };
+
+  const handleDeleteInventory = async (invId: number) => {
+    if (!confirm("Are you sure you want to remove this medication from inventory?")) return;
+    try {
+      const res = await fetch(`/pharmacies/pharmacy/inventory/delete/${invId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete inventory.");
+      fetchData();
+    } catch(err: any) {
+      alert(err.message);
+    }
+  };
+
+  const openAddModal = () => {
+    setInvFormData({ id: null, medicine_name: "", quantity: "", price: "", expiry_date: "" });
+    setShowInvModal(true);
+  };
+
+  const openEditModal = (m: Medicine) => {
+    setInvFormData({ id: m.id, medicine_name: m.name, quantity: m.stock, price: m.price, expiry_date: m.expiry });
+    setShowInvModal(true);
   };
 
   const calculateBill = (items: RxItem[]) => {
@@ -205,7 +296,6 @@ export function PharmacistDashboard() {
         </div>
         
         <div className="flex items-center gap-2">
-           <button onClick={() => navigate("/")} className="px-4 py-2 border border-slate-300 text-[10px] font-black uppercase hover:bg-slate-50 transition-all">Switch Profile</button>
            <button className="px-4 py-2 bg-[#0056b3] text-white text-[10px] font-black uppercase shadow-md hover:bg-blue-800 transition-all">Support Desk</button>
         </div>
       </div>
@@ -213,9 +303,9 @@ export function PharmacistDashboard() {
       {/* Analytics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: "Active Requests", val: stats.pending_requests, icon: ClipboardList, color: "blue" },
-          { label: "Total Inventory (SKU)", val: stats.total_sku, icon: Package, color: "slate" },
-          { label: "Low Stock Alerts", val: inventory.filter(m => m.stock < 10).length, icon: AlertCircle, color: "red" },
+          { label: "Active Requests", val: stats.active_requests, icon: ClipboardList, color: "blue" },
+          { label: "Total Inventory (SKU)", val: stats.total_inventory, icon: Package, color: "slate" },
+          { label: "Low Stock Alerts", val: stats.low_stock, icon: AlertCircle, color: "red" },
           { label: "Market Status", val: stats.market_status.toUpperCase(), icon: TrendingUp, color: "green" },
         ].map((stat, i) => (
           <div key={i} className={`bg-white border-l-4 border-slate-600 border border-slate-200 p-4 shadow-sm group hover:shadow-md transition-all`}>
@@ -404,7 +494,7 @@ export function PharmacistDashboard() {
                  />
               </div>
               <div className="flex gap-2 w-full md:w-auto">
-                <button className="flex-1 md:flex-none px-6 py-3 bg-[#0056b3] text-white font-black uppercase text-[10px] tracking-widest shadow-md flex items-center gap-2 whitespace-nowrap">
+                <button onClick={openAddModal} className="flex-1 md:flex-none px-6 py-3 bg-[#0056b3] text-white font-black uppercase text-[10px] tracking-widest shadow-md flex items-center gap-2 whitespace-nowrap">
                    <Plus className="w-4 h-4" /> Add Medication
                 </button>
               </div>
@@ -432,10 +522,10 @@ export function PharmacistDashboard() {
                              </td>
                              <td className="px-6 py-5 text-center">
                                 <div className="flex flex-col items-center gap-1">
-                                   <div className={`px-4 py-1 text-[11px] font-black border uppercase tracking-tighter ${m.stock < 10 ? "bg-red-50 text-red-600 border-red-200 animate-pulse" : "bg-[#e8f5e9] text-green-700 border-green-200"}`}>
+                                   <div className={`px-4 py-1 text-[11px] font-black border uppercase tracking-tighter ${m.stock < 10 ? "bg-red-50 text-red-600 border-red-200" : "bg-[#e8f5e9] text-green-700 border-green-200"}`}>
                                       {m.stock} Units
                                    </div>
-                                   {m.stock < 10 && <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">Low Stock Alert</span>}
+                                   {m.stock < 10 && <span className="text-[8px] font-black text-white bg-red-600 px-2 py-0.5 rounded-sm uppercase tracking-widest animate-pulse">Low Stock</span>}
                                 </div>
                              </td>
                              <td className="px-6 py-5">
@@ -445,12 +535,15 @@ export function PharmacistDashboard() {
                                 </div>
                              </td>
                              <td className="px-6 py-5">
-                                <span className="text-[10px] font-black uppercase text-slate-500">{m.expiry || "N/A"}</span>
+                                <div className="flex flex-col items-start gap-1">
+                                   <span className="text-[10px] font-black uppercase text-slate-500">{m.expiry || "N/A"}</span>
+                                   {isExpiringSoon(m.expiry) && <span className="text-[8px] font-black text-yellow-800 bg-yellow-200 px-2 py-0.5 rounded-sm uppercase tracking-widest animate-pulse">Expiring Soon</span>}
+                                </div>
                              </td>
                              <td className="px-6 py-5 text-right">
                                 <div className="flex justify-end gap-1 opacity-20 group-hover:opacity-100 transition-opacity">
-                                   <button className="p-2 border border-slate-200 bg-white hover:bg-[#0056b3] hover:text-white transition-all"><Edit2 className="w-3.5 h-3.5"/></button>
-                                   <button className="p-2 border border-slate-200 bg-white hover:bg-red-600 hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5"/></button>
+                                   <button onClick={() => openEditModal(m)} className="p-2 border border-slate-200 bg-white hover:bg-[#0056b3] hover:text-white transition-all"><Edit2 className="w-3.5 h-3.5"/></button>
+                                   <button onClick={() => handleDeleteInventory(m.id)} className="p-2 border border-slate-200 bg-white hover:bg-red-600 hover:text-white transition-all"><Trash2 className="w-3.5 h-3.5"/></button>
                                 </div>
                              </td>
                           </tr>
@@ -467,7 +560,7 @@ export function PharmacistDashboard() {
         <div className="bg-white border-2 border-slate-900 shadow-xl overflow-hidden">
            <div className="bg-slate-900 p-4 border-b border-white/10 flex justify-between items-center">
               <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-300">Dispensation Ledger</h2>
-              <button className="text-[9px] font-black text-[#0056b3] uppercase tracking-widest flex items-center gap-1 bg-white px-3 py-1">Export CSV</button>
+              <button onClick={exportHistoryCSV} className="text-[9px] font-black text-[#0056b3] uppercase tracking-widest flex items-center gap-1 bg-white px-3 py-1 hover:bg-slate-200 transition-colors">Export CSV</button>
            </div>
            
            <div className="overflow-x-auto">
@@ -475,31 +568,27 @@ export function PharmacistDashboard() {
                  <thead className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
                     <tr>
                        <th className="px-6 py-4">Transaction Date</th>
-                       <th className="px-6 py-4">Patient Profile</th>
-                       <th className="px-6 py-4">Medicines</th>
-                       <th className="px-6 py-4 text-center">Status</th>
-                       <th className="px-6 py-4 text-right">Action</th>
+                       <th className="px-6 py-4">Medicine List</th>
+                       <th className="px-6 py-4 text-center">Qty Change</th>
+                       <th className="px-6 py-4 text-center">Action</th>
+                       <th className="px-6 py-4 text-right">Audit</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-100">
-                    {historyList.map((rx, idx) => (
+                    {historyList.map((txn, idx) => (
                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-6 py-5">
-                             <div className="text-xs font-black text-slate-900 uppercase">{rx.date ? new Date(rx.date).toLocaleDateString() : "N/A"}</div>
-                             <div className="text-[10px] font-bold text-slate-400 mt-0.5">{rx.date ? new Date(rx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}</div>
+                             <div className="text-xs font-black text-slate-900 uppercase">{txn.date ? new Date(txn.date).toLocaleDateString() : "N/A"}</div>
+                             <div className="text-[10px] font-bold text-slate-400 mt-0.5">{txn.date ? new Date(txn.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}</div>
                           </td>
                           <td className="px-6 py-5">
-                             <div className="text-sm font-black text-slate-900 uppercase">{rx.patient_name}</div>
-                          </td>
-                          <td className="px-6 py-5">
-                             <div className="flex flex-wrap gap-1">
-                                {rx.medicines.map((m: any, i: number) => (
-                                  <span key={i} className="text-[9px] font-bold bg-slate-100 px-1 border border-slate-200 uppercase">{m.medicine}</span>
-                                ))}
-                             </div>
+                             <div className="text-sm font-black text-slate-900 uppercase">{txn.medicine}</div>
                           </td>
                           <td className="px-6 py-5 text-center">
-                             <span className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest border ${rx.status === "dispensed" ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>{rx.status}</span>
+                             <span className={`text-base font-black ${txn.quantity_change > 0 ? "text-green-600" : "text-red-600"}`}>{txn.quantity_change > 0 ? `+${txn.quantity_change}` : txn.quantity_change}</span>
+                          </td>
+                          <td className="px-6 py-5 text-center">
+                             <span className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest border ${txn.action === "added" ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>{txn.action}</span>
                           </td>
                           <td className="px-6 py-5 text-right">
                              <button className="text-[10px] font-black text-[#0056b3] uppercase tracking-widest underline decoration-2 underline-offset-4">Audit Details</button>
@@ -517,6 +606,41 @@ export function PharmacistDashboard() {
                  </tbody>
               </table>
            </div>
+        </div>
+      )}
+
+      {/* ADD/EDIT INVENTORY MODAL */}
+      {showInvModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border-4 border-slate-900 shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
+             <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
+                <h3 className="text-sm font-black uppercase tracking-widest">{invFormData.id ? "Update Operational Stock" : "Registry Add: New Medication"}</h3>
+                <button onClick={() => setShowInvModal(false)} className="hover:text-red-400 transition-colors"><X className="w-5 h-5"/></button>
+             </div>
+             <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Clinical Designation</label>
+                  <input type="text" value={invFormData.medicine_name} onChange={e => setInvFormData({...invFormData, medicine_name: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50 disabled:cursor-not-allowed" placeholder="E.g. PARACETAMOL 500MG"/>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Stock Quantity</label>
+                     <input type="number" value={invFormData.quantity} onChange={e => setInvFormData({...invFormData, quantity: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none" min="0"/>
+                   </div>
+                   <div>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Unit Price (₹)</label>
+                     <input type="number" value={invFormData.price} onChange={e => setInvFormData({...invFormData, price: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none" min="0" step="0.01"/>
+                   </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Expiry Horizon (YYYY-MM)</label>
+                  <input type="month" value={invFormData.expiry_date} onChange={e => setInvFormData({...invFormData, expiry_date: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none"/>
+                </div>
+                <button onClick={handleSaveInventory} disabled={savingInv || !invFormData.medicine_name} className="w-full py-4 mt-2 bg-[#0056b3] text-white font-black uppercase tracking-widest text-xs shadow-md hover:bg-blue-800 transition-all flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                  {savingInv ? <Loader2 className="w-4 h-4 animate-spin"/> : "Execute Registry Commit"}
+                </button>
+             </div>
+          </div>
         </div>
       )}
 

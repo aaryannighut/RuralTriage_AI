@@ -111,6 +111,15 @@ class PharmacyInventory(Base):
     medicine_id        = Column(Integer, ForeignKey("medicines.id"), nullable=False)
     quantity_available = Column(Integer, default=0)
 
+class PharmacyTransaction(Base):
+    __tablename__ = "pharmacy_transactions"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    pharmacy_id     = Column(Integer, ForeignKey("pharmacies.id"), nullable=False)
+    medicine_name   = Column(String, nullable=False)
+    quantity_change = Column(Integer, nullable=False)
+    action          = Column(String, nullable=False) # "added", "removed", "updated", "dispensed"
+    date            = Column(DateTime, default=func.now())
 
 # -------------------------
 # Medicine Table

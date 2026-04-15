@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database import get_db
-from app.models import Medicine, Pharmacy, PharmacyInventory
+from app.models import Medicine, Pharmacy, PharmacyInventory, PharmacyTransaction
 
 
 router = APIRouter(prefix="/pharmacies", tags=["Pharmacies"])
@@ -323,8 +323,83 @@ def add_pharmacy_inventory_v2(data: InventoryAddIn, db: Session = Depends(get_db
         inv = PharmacyInventory(pharmacy_id=data.pharmacy_id, medicine_id=med.id, quantity_available=data.quantity)
         db.add(inv)
     
+    # Log transaction
+    txn = PharmacyTransaction(
+        pharmacy_id=data.pharmacy_id,
+        medicine_name=med.name,
+        quantity_change=data.quantity,
+        action="added"
+    )
+    db.add(txn)
+    
     db.commit()
     return {"status": "success"}
+
+class InventoryUpdateInV2(BaseModel):
+    quantity: int
+    price: float
+    expiry_date: str
+
+@router.put("/pharmacy/inventory/update/{inv_id}")
+def update_pharmacy_inventory_v2(inv_id: int, data: InventoryUpdateInV2, db: Session = Depends(get_db)):
+    inv = db.query(PharmacyInventory).filter(PharmacyInventory.id == inv_id).first()
+    if not inv:
+        raise HTTPException(status_code=404, detail="Inventory item not found")
+        
+    med = db.query(Medicine).filter(Medicine.id == inv.medicine_id).first()
+    if med:
+        med.price = data.price
+        med.expiry = data.expiry_date
+    
+    qty_diff = data.quantity - inv.quantity_available
+    inv.quantity_available = data.quantity
+    
+    # Log transaction if quantity changed
+    if qty_diff != 0:
+        action = "added" if qty_diff > 0 else "removed"
+        txn = PharmacyTransaction(
+            pharmacy_id=inv.pharmacy_id,
+            medicine_name=med.name if med else "Unknown",
+            quantity_change=qty_diff,
+            action=action
+        )
+        db.add(txn)
+        
+    db.commit()
+    return {"status": "success"}
+
+@router.delete("/pharmacy/inventory/delete/{inv_id}")
+def delete_pharmacy_inventory_v2(inv_id: int, db: Session = Depends(get_db)):
+    inv = db.query(PharmacyInventory).filter(PharmacyInventory.id == inv_id).first()
+    if not inv:
+        raise HTTPException(status_code=404, detail="Inventory item not found")
+        
+    med = db.query(Medicine).filter(Medicine.id == inv.medicine_id).first()
+    med_name = med.name if med else "Unknown"
+    
+    # Log transaction
+    txn = PharmacyTransaction(
+        pharmacy_id=inv.pharmacy_id,
+        medicine_name=med_name,
+        quantity_change=-inv.quantity_available,
+        action="removed"
+    )
+    db.add(txn)
+    
+    db.delete(inv)
+    db.commit()
+    return {"status": "success"}
+
+@router.get("/pharmacy/transactions/{pharmacy_id}")
+def get_pharmacy_transactions(pharmacy_id: int, db: Session = Depends(get_db)):
+    txns = db.query(PharmacyTransaction).filter(PharmacyTransaction.pharmacy_id == pharmacy_id).order_by(PharmacyTransaction.date.desc()).all()
+    return [{
+        "id": t.id,
+        "medicine": t.medicine_name,
+        "quantity_change": t.quantity_change,
+        "action": t.action,
+        "date": t.date.isoformat() if t.date else None
+    } for t in txns]
 
 @router.get("/pharmacy/prescriptions/{pharmacy_id}")
 def get_pharmacy_prescriptions_v2(pharmacy_id: int, db: Session = Depends(get_db)):
@@ -387,13 +462,17 @@ def get_pharmacy_history_v2(pharmacy_id: int, db: Session = Depends(get_db)):
 
 @router.get("/pharmacy/dashboard/stats")
 def get_pharmacy_stats_v2(pharmacy_id: int = Query(...), db: Session = Depends(get_db)):
-    sku_count = db.query(PharmacyInventory).filter(PharmacyInventory.pharmacy_id == pharmacy_id).count()
+    inventory = db.query(PharmacyInventory).filter(PharmacyInventory.pharmacy_id == pharmacy_id).all()
+    sku_count = len(inventory)
+    low_stock = sum(1 for inv in inventory if inv.quantity_available < 10)
+    
     from app.models import Patient
     all_px = db.query(Patient).all()
     pending = sum(1 for p in all_px for rx in (p.prescriptions or []) if rx.get("status") == "pending")
     return {
-        "total_sku": sku_count,
-        "pending_requests": pending,
+        "active_requests": pending,
+        "total_inventory": sku_count,
+        "low_stock": low_stock,
         "market_status": "active"
     }
 
