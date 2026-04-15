@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router";
-import { LogIn, Menu, X, User, Home, Activity, FileText, BriefcaseMedical } from "lucide-react";
+import { LogIn, Menu, X, User, Home, Activity, FileText, BriefcaseMedical, Stethoscope, ClipboardList, Calendar, Pill } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import SwasthyaAuth from "./SwasthyaAuth";
@@ -17,7 +17,7 @@ export function Layout() {
     ? user.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
     : user.email?.[0]?.toUpperCase() ?? "?";
 
-  const navItems = [
+  const patientNavItems = [
     { name: "Dashboard", path: "/", icon: <Home className="w-5 h-5" /> },
     { name: "Talk to Doctor", path: "/talk-to-doctor", icon: <User className="w-5 h-5" /> },
     { name: "Check Symptoms", path: "/check-symptoms", icon: <Activity className="w-5 h-5" /> },
@@ -25,7 +25,40 @@ export function Layout() {
     { name: "Health Records", path: "/health-records", icon: <FileText className="w-5 h-5" /> },
   ];
 
-  const isActive = (path: string) => location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
+  const doctorNavItems = [
+    { name: "Clinical Dashboard", path: "/dashboard/doctor", icon: <Stethoscope className="w-5 h-5" /> },
+    { name: "Appointments", path: "/dashboard/doctor#appointments", icon: <Calendar className="w-5 h-5" /> },
+    { name: "Patient Queue", path: "/dashboard/doctor#queue", icon: <ClipboardList className="w-5 h-5" /> },
+    { name: "Prescriptions", path: "/dashboard/doctor#prescriptions", icon: <Pill className="w-5 h-5" /> },
+  ];
+
+  const pharmacistNavItems = [
+    { name: "Dispensary", path: "/dashboard/pharmacist", icon: <Pill className="w-5 h-5" /> },
+    { name: "Inventory", path: "/dashboard/pharmacist#inventory", icon: <ClipboardList className="w-5 h-5" /> },
+  ];
+
+  const navItems = user.role === "doctor"
+    ? doctorNavItems
+    : user.role === "pharmacy"
+    ? pharmacistNavItems
+    : patientNavItems;
+
+  const isActive = (path: string) => {
+    // If the path contains a hash, ensure both the base path and the hash match
+    if (path.includes("#")) {
+      const [base, hash] = path.split("#");
+      return location.pathname === base && location.hash === `#${hash}`;
+    }
+
+    // For dashboard base paths, don't show active if a hash is present 
+    // (so "Clinical Dashboard" doesn't light up when "Appointments" is active)
+    if ((path === "/dashboard/doctor" || path === "/dashboard/pharmacist" || path === "/") && location.hash) {
+      return false;
+    }
+
+    const base = path.split("#")[0];
+    return location.pathname === base || (base !== "/" && location.pathname.startsWith(base));
+  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white font-sans text-slate-900 selection:bg-[#e6f2ff]">
@@ -42,8 +75,8 @@ export function Layout() {
 
       {/* Sidebar Navigation */}
       <aside className={`${mobileMenuOpen ? "block" : "hidden"} lg:flex flex-col w-full lg:w-72 border-r border-slate-300 bg-white h-screen sticky top-0 z-40 overflow-y-auto`}> 
-        <div className="hidden lg:flex items-center gap-0 p-6 border-b border-slate-300">
-          <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain scale-[1.5]" />
+        <div className="hidden lg:flex items-center gap-0 p-6 pl-2 border-b border-slate-300">
+          <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain scale-[1.5] -ml-2" />
           <span className="text-2xl font-bold text-slate-900 tracking-tight leading-none -ml-4">RuralTriage AI</span>
         </div>
 

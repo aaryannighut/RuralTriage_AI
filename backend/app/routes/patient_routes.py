@@ -161,6 +161,51 @@ def set_family_doctor(data: FamilyDoctorIn, db: Session = Depends(get_db)):
     return {"message": "Family doctor updated successfully", "family_doctor_id": patient.family_doctor_id}
 
 
+# ── Prescriptions ──────────────────────────────────────────────────────────────
+
+class PrescriptionItemIn(BaseModel):
+    medicine: str
+    dosage: str
+    duration: str = ""
+    notes: str = ""
+
+
+class PrescriptionIn(BaseModel):
+    patient_id: int
+    items: list[PrescriptionItemIn]
+    issued_at: Optional[str] = None
+    issued_by: str = ""
+
+
+@router.post("/{patient_id}/prescriptions", status_code=201)
+def add_prescription(patient_id: int, data: PrescriptionIn, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    prescriptions = list(patient.prescriptions or [])
+    new_rx = {
+        "id": len(prescriptions) + 1,
+        "patient_id": patient_id,
+        "items": [item.model_dump() for item in data.items],
+        "issued_at": data.issued_at or datetime.utcnow().isoformat(),
+        "issued_by": data.issued_by,
+    }
+    prescriptions.append(new_rx)
+    patient.prescriptions = prescriptions
+    db.commit()
+    db.refresh(patient)
+    return {"message": "Prescription issued successfully", "prescription": new_rx}
+
+
+@router.get("/{patient_id}/prescriptions")
+def get_prescriptions(patient_id: int, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return patient.prescriptions or []
+
+
 class PatientIn(BaseModel):
     name: str
     user_id: Optional[int] = None

@@ -31,6 +31,14 @@ def get_appointment_history(patient_id: int, db: Session = Depends(get_db)):
         Appointment.status.in_(["Completed", "Cancelled"])
     ).all()
 
+
+@router.get("/doctor/{doctor_id}", response_model=List[AppointmentOut])
+def get_doctor_appointments(doctor_id: int, db: Session = Depends(get_db)):
+    return db.query(Appointment).filter(
+        Appointment.doctor_id == doctor_id,
+        Appointment.status == "Scheduled"
+    ).all()
+
 @router.put("/cancel/{appointment_id}", response_model=AppointmentOut)
 def cancel_appointment(appointment_id: int, db: Session = Depends(get_db)):
     apt = db.query(Appointment).filter(Appointment.id == appointment_id).first()

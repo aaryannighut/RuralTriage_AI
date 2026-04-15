@@ -89,7 +89,12 @@ export default function UserProfile({ onClose }: UserProfileProps) {
           </div>
 
           <button
-            onClick={() => { onClose(); navigate("/dashboard"); }}
+            onClick={() => { 
+                onClose(); 
+                if (user.role === "doctor") navigate("/dashboard/doctor");
+                else if (user.role === "pharmacy") navigate("/dashboard/pharmacist");
+                else navigate("/");
+            }}
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-md bg-[#4F7DF3] text-white hover:bg-[#3D6DE3] transition-colors text-[0.9rem] font-semibold font-sans cursor-pointer shadow-[0_2px_10px_rgba(79,125,243,0.3)]"
           >
             <LayoutDashboard className="w-4 h-4" />

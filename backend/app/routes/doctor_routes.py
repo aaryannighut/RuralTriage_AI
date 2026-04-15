@@ -25,6 +25,7 @@ class DoctorIn(BaseModel):
     consult_mode: str = "Both"        # Video | In-Person | Both
     verified: bool = False
     certificate: Optional[str] = None
+    user_id: Optional[int] = None
 
 
 class DoctorOut(DoctorIn):
@@ -51,6 +52,14 @@ def search_doctors(query: str, db: Session = Depends(get_db)):
         (Doctor.specialty.ilike(f"%{query}%")) |
         (Doctor.qualification.ilike(f"%{query}%"))
     ).all()
+
+
+@router.get("/user/{user_id}", response_model=DoctorOut)
+def get_doctor_by_user_id(user_id: int, db: Session = Depends(get_db)):
+    doc = db.query(Doctor).filter(Doctor.user_id == user_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Doctor profile not found for this user")
+    return doc
 
 
 @router.post("/", response_model=DoctorOut, status_code=201)

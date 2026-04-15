@@ -283,6 +283,14 @@ def remove_pharmacy_inventory(pharmacy_id: int, medicine_id: int, db: Session = 
         db.commit()
 
 
+@router.get("/user/{user_id}", response_model=PharmacyOut)
+def get_pharmacy_by_user_id(user_id: int, db: Session = Depends(get_db)):
+    pharmacy = db.query(Pharmacy).filter(Pharmacy.user_id == user_id).first()
+    if not pharmacy:
+        raise HTTPException(status_code=404, detail="Pharmacy profile not found for this user")
+    return pharmacy
+
+
 @router.get("/", response_model=list[PharmacyOut])
 def list_pharmacies(user_id: Optional[int] = Query(default=None), db: Session = Depends(get_db)):
     query = db.query(Pharmacy)
@@ -298,6 +306,27 @@ def create_pharmacy(data: PharmacyIn, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(pharmacy)
     return pharmacy
+
+
+@router.get("/prescriptions")
+def get_all_prescriptions(db: Session = Depends(get_db)):
+    """
+    Return all prescriptions across all patients – for the pharmacist
+    to see what has been prescribed and needs to be dispensed.
+    Newest first.
+    """
+    from app.models import Patient  # local import to avoid circular
+    all_patients = db.query(Patient).all()
+    result = []
+    for patient in all_patients:
+        for rx in (patient.prescriptions or []):
+            result.append({
+                **rx,
+                "patient_name": patient.name,
+                "patient_id":   patient.id,
+            })
+    result.sort(key=lambda x: x.get("issued_at", ""), reverse=True)
+    return result
 
 
 @router.get("/{pharmacy_id}", response_model=PharmacyOut)

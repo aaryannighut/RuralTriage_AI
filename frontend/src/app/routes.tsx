@@ -13,6 +13,8 @@ import { NotFound } from "./pages/NotFound";
 import { HealthDashboard } from "./pages/HealthDashboard";
 import { PharmaAdmin } from "./pages/PharmaAdmin";
 import { DoctorAdmin } from "./pages/DoctorAdmin";
+import { DoctorDashboard } from "./pages/DoctorDashboard";
+import { PharmacistDashboard } from "./pages/PharmacistDashboard";
 import { TestCall } from "./pages/TestCall";
 import { TestChat } from "./pages/TestChat";
 
@@ -31,6 +33,8 @@ export const router = createBrowserRouter([
       { path: "contact", Component: Contact },
       { path: "privacy", Component: Privacy },
       { path: "dashboard", Component: HealthDashboard },
+      { path: "dashboard/doctor", Component: DoctorDashboard },
+      { path: "dashboard/pharmacist", Component: PharmacistDashboard },
       { path: "pharma", Component: PharmaAdmin },
       { path: "doctors", Component: DoctorAdmin },
       { path: "test-call", Component: TestCall },

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { User, Stethoscope, Pill, ArrowLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -63,6 +64,7 @@ interface SwasthyaAuthProps { onClose?: () => void }
 
 export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
 
@@ -114,7 +116,12 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
       if (!res.ok) { setError(data.detail ?? "Login failed"); return; }
       setSuccess(`Welcome back, ${data.name}!`);
       login({ name: data.name, email: data.email, phone: "", role: data.role ?? "patient", userId: data.id });
-      setTimeout(() => onClose?.(), 900);
+      setTimeout(() => {
+        onClose?.();
+        if (data.role === "doctor") navigate("/dashboard/doctor");
+        else if (data.role === "pharmacy") navigate("/dashboard/pharmacist");
+        else navigate("/");
+      }, 900);
     } catch { setError("Could not reach the server. Is the backend running?"); }
     finally   { setLoading(false); }
   };
@@ -165,6 +172,7 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
              city:          doctorP.city,
              state:         doctorP.state,
              phone:         doctorP.phone,
+             user_id:       authData.id,
           }),
         });
       } else if (selectedRole === "pharmacy") {
@@ -190,7 +198,12 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
 
       setSuccess(`Account created! Welcome, ${authData.name} `);
       login({ name: authData.name, email: authData.email, phone: selectedRole === "pharmacy" ? pharmacyP.phone : "", role: selectedRole, userId: authData.id });
-      setTimeout(() => onClose?.(), 1400);
+      setTimeout(() => {
+        onClose?.();
+        if (selectedRole === "doctor") navigate("/dashboard/doctor");
+        else if (selectedRole === "pharmacy") navigate("/dashboard/pharmacist");
+        else navigate("/");
+      }, 1400);
     } catch { setError("Could not reach the server. Is the backend running?"); }
     finally   { setLoading(false); }
   };

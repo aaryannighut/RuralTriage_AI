@@ -68,6 +68,10 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/doctor': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
 })

@@ -19,6 +19,7 @@ from app.settings import Settings
 from app.database import Base, engine
 from app.routes.auth_routes import router as auth_router
 from app.routes.doctor_routes import router as doctor_router
+from app.routes.doctor_dashboard_routes import router as doctor_dashboard_router
 from app.routes.health_records_routes import router as health_records_router
 from app.routes.patient_routes import router as patient_router
 from app.routes.pharmacist_routes import router as pharmacist_router
@@ -71,6 +72,7 @@ exception_handler.init_app(app)
 
 app.include_router(auth_router)
 app.include_router(doctor_router)
+app.include_router(doctor_dashboard_router)
 app.include_router(health_records_router)
 app.include_router(patient_router)
 app.include_router(pharmacist_router)
