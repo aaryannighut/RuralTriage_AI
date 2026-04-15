@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Search, MapPin, Phone, Clock, FileText, Loader2, AlertCircle, Building2, ChevronRight } from "lucide-react";
-
+import { Search, MapPin, Phone, Clock, FileText, Loader2, AlertCircle, Building2, ChevronRight, ShieldAlert } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 interface MedicineResponse {
   id: number;
   name: string;
@@ -30,6 +30,7 @@ export function FindMedicines() {
   const [hasSearched, setHasSearched] = useState(false);
   
   const [loadingPharmacies, setLoadingPharmacies] = useState(false);
+  const { user } = useAuth();
 
   // When a medicine is selected, fetch the filtered pharmacies
   useEffect(() => {
@@ -195,6 +196,14 @@ export function FindMedicines() {
        setLoadingMedicines(false);
      }
   };
+
+  if (!user.userId) return (
+    <div className="w-full max-w-4xl mx-auto p-6 mt-12 bg-red-50 border border-red-300 flex items-center flex-col text-center">
+       <ShieldAlert className="w-12 h-12 text-red-700 mb-3" />
+       <h2 className="text-xl font-bold text-red-900 uppercase">Unauthorized Access</h2>
+       <p className="text-red-800 font-semibold mt-2">Authentication required to search pharmacy inventories.</p>
+    </div>
+  );
 
   return (
     <div className="w-full text-slate-900 font-sans pb-12">

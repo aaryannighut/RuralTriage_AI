@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import {
   Video, Phone, MessageCircle, Calendar, Clock, User,
   Mic, MicOff, VideoOff, PhoneOff, Loader2, Wifi, WifiOff, Copy, Check as CheckIcon,
-  X, ShieldCheck, History, Search, Heart, UserPlus
+  X, ShieldCheck, History, Search, Heart, UserPlus, ShieldAlert
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { toWsUrl } from "../config/runtime";
@@ -565,6 +565,13 @@ export function TalkToDoctor() {
       alert("Network Error: Failed to commit selection to master record.");
     }
   };
+  if (!user.userId) return (
+    <div className="w-full max-w-4xl mx-auto p-6 mt-12 bg-red-50 border border-red-300 flex items-center flex-col text-center">
+       <ShieldAlert className="w-12 h-12 text-red-700 mb-3" />
+       <h2 className="text-xl font-bold text-red-900 uppercase">Unauthorized Access</h2>
+       <p className="text-red-800 font-semibold mt-2">Authentication required for clinical tele-consultations.</p>
+    </div>
+  );
 
   return (
     <div className="w-full space-y-6">
