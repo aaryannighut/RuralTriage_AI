@@ -38,9 +38,17 @@ The JSON structure:
   "explanation": ["Reason 1", "Reason 2"],
   "medical_advice": ["Advice 1", "Advice 2"],
   "next_steps": ["Step 1", "Step 2"],
-  "risk_level": "Low | Medium | High",
+  "risk_level": "Low | Medium | High | Critical",
+  "final_decision": "Treat Locally | Monitor / Follow-up | Refer to Higher Hospital | Emergency Referral",
+  "decision_reasoning": "Reasoning for the triage decision",
   "precautions": ["Precaution 1", "Precaution 2"]
 }
+
+### MAPPING RULES:
+- risk_level LOW -> final_decision: "Treat Locally"
+- risk_level MEDIUM -> final_decision: "Monitor / Follow-up"
+- risk_level HIGH -> final_decision: "Refer to Higher Hospital"
+- risk_level CRITICAL -> final_decision: "Emergency Referral"
 
 ### RULES:
 - If symptoms are severe (chest pain, breathing issues), set risk_level to "High".
@@ -65,7 +73,9 @@ You MUST respond with a valid JSON object ONLY, following the EXACT same structu
   "explanation": [...],
   "medical_advice": [...],
   "next_steps": [...],
-  "risk_level": "Low | Medium | High",
+  "risk_level": "Low | Medium | High | Critical",
+  "final_decision": "Decision",
+  "decision_reasoning": "Reasoning",
   "precautions": [...]
 }
 
@@ -439,6 +449,8 @@ class TriageResponse(BaseModel):
     medical_advice: list[str]
     next_steps: list[str]
     risk_level: str
+    final_decision: str
+    decision_reasoning: str
     precautions: list[str]
 
 
@@ -452,17 +464,20 @@ def calculate_risk_level(symptoms: list[str], duration: str) -> str:
     Initial risk evaluation based on symptoms and duration.
     - LOW: mild symptoms (1-2), short duration (< 24h)
     - MEDIUM: fever + cough, or moderate duration (1-3 days)
-    - HIGH: severe symptoms (chest pain, breathing issues) or long duration (>3 days)
+    - HIGH: severe symptoms or long duration (>3 days)
+    - CRITICAL: immediate life-threatening symptoms
     """
     symptoms_lower = [s.lower() for s in symptoms]
     
+    # Critical symptoms check
+    critical_indicators = ["chest pain", "breathing", "shortness of breath", "unconscious", "heavy bleeding"]
+    if any(any(ind in s for ind in critical_indicators) for s in symptoms_lower):
+        return "Critical"
+    
     # Severe symptoms check
-    severe_indicators = ["chest pain", "breathing", "shortness of breath", "severe vomiting", "unconscious"]
+    severe_indicators = ["severe vomiting", "neck stiffness", "confusion", "high fever"]
     if any(any(ind in s for ind in severe_indicators) for s in symptoms_lower):
         return "High"
-    
-    if "vomiting" in symptoms_lower: # User specifically mentioned vomiting as severe in one of the prompts
-         return "High"
 
     duration_lower = duration.lower()
     if "more than 7 days" in duration_lower or "4-7 days" in duration_lower:

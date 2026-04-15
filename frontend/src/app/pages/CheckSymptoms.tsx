@@ -22,7 +22,9 @@ interface TriageResult {
   explanation: string[];
   medical_advice: string[];
   next_steps: string[];
-  risk_level: "Low" | "Medium" | "High";
+  risk_level: "Low" | "Medium" | "High" | "Critical";
+  final_decision: string;
+  decision_reasoning: string;
   precautions: string[];
 }
 
@@ -398,16 +400,50 @@ export function CheckSymptoms() {
 }
 
 function TriageDashboard({ result, time }: { result: TriageResult, time: string }) {
+    const getDecisionColors = (level: string) => {
+        switch (level) {
+            case "Critical": return { border: "border-red-600", bg: "bg-red-50", text: "text-red-700", icon: ShieldAlert };
+            case "High": return { border: "border-red-400", bg: "bg-red-50", text: "text-red-600", icon: AlertTriangle };
+            case "Medium": return { border: "border-yellow-400", bg: "bg-yellow-50", text: "text-yellow-700", icon: AlertCircle };
+            case "Low": return { border: "border-green-400", bg: "bg-green-50", text: "text-green-700", icon: CheckCircle };
+            default: return { border: "border-slate-200", bg: "bg-white", text: "text-slate-900", icon: Bot };
+        }
+    };
+
+    const colors = getDecisionColors(result.risk_level);
+    const DecisionIcon = colors.icon;
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4 border-l-4 border-slate-200 pl-4">
+            {/* Final Triage Decision Card */}
+            <div className={`md:col-span-2 border-2 ${colors.border} ${colors.bg} p-5 shadow-md relative overflow-hidden`}>
+                <div className="absolute top-0 right-0 p-2 opacity-5 italic text-[8px] font-black uppercase tracking-[0.3em]">AI Clinical Protocol</div>
+                <div className="flex items-start gap-4">
+                    <div className={`p-3 rounded-full ${colors.bg} border ${colors.border}`}>
+                        <DecisionIcon className={`w-8 h-8 ${colors.text} ${result.risk_level === "Critical" ? "animate-pulse" : ""}`} />
+                    </div>
+                    <div>
+                        <h4 className="text-[10px] font-black text-slate-500 uppercase mb-1 tracking-widest">Final Triage Decision</h4>
+                        <h2 className={`text-2xl font-black uppercase tracking-tighter ${colors.text} leading-none mb-2`}>
+                            {result.final_decision}
+                        </h2>
+                        <div className="bg-white/60 p-2 border border-white/20 rounded">
+                           <p className="text-[11px] font-bold text-slate-700 leading-tight italic">
+                              "{result.decision_reasoning}"
+                           </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className="md:col-span-2 border border-slate-200 bg-white p-3 shadow-sm">
                 <h4 className="text-[8px] font-black text-slate-400 uppercase mb-1 tracking-widest">Summary</h4>
                 <p className="text-xs font-bold text-slate-900 leading-tight">{result.summary}</p>
             </div>
 
-            <div className={`border p-3 bg-white shadow-sm ${result.risk_level === "High" ? "border-red-400" : result.risk_level === "Medium" ? "border-yellow-400" : "border-green-400"}`}>
-                <h4 className="text-[8px] font-black text-slate-400 uppercase mb-1 tracking-widest">Risk Level</h4>
-                <div className={`text-lg font-black uppercase tracking-tighter ${result.risk_level === "High" ? "text-red-700" : result.risk_level === "Medium" ? "text-yellow-700" : "text-green-700"}`}>
+            <div className={`border p-3 bg-white shadow-sm ${result.risk_level === "Critical" ? "border-red-600" : result.risk_level === "High" ? "border-red-400" : result.risk_level === "Medium" ? "border-yellow-400" : "border-green-400"}`}>
+                <h4 className="text-[8px] font-black text-slate-400 uppercase mb-1 tracking-widest">Baseline Risk</h4>
+                <div className={`text-lg font-black uppercase tracking-tighter ${result.risk_level === "Critical" ? "text-red-800 animate-pulse" : result.risk_level === "High" ? "text-red-700" : result.risk_level === "Medium" ? "text-yellow-700" : "text-green-700"}`}>
                     {result.risk_level}
                 </div>
             </div>
