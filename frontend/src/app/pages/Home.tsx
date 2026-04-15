@@ -101,34 +101,48 @@ export function Home() {
         <motion.div 
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: "-100px" }}
           className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-300"
         >
           {features.map((feature, idx) => (
-            <Link
+            <motion.div
               key={idx}
-              to={feature.path}
-              className={`p-6 md:p-8 flex items-start gap-4 hover:bg-slate-50 transition-none group ${idx > 1 ? 'border-t border-slate-300' : ''}`}
+              variants={{
+                hidden: { opacity: 0, y: 10 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+              }}
             >
-              <div className="p-3 bg-[#e6f2ff] border border-blue-200 shrink-0 group-hover:scale-110 transition-transform duration-300">
-                <feature.icon className="w-8 h-8 text-[#0056b3]" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-slate-900 uppercase tracking-wide mb-2 flex items-center gap-2">
-                  {feature.title}
-                  <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-[#0056b3] group-hover:translate-x-1 transition-all" />
-                </h3>
-                <p className="text-slate-600 text-base leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
-            </Link>
+              <Link
+                to={feature.path}
+                className={`group p-6 md:p-8 flex items-start gap-4 hover:bg-[#f8fafc] transition-all duration-300 relative overflow-hidden ${idx > 1 ? 'border-t border-slate-300' : ''}`}
+              >
+                <div className="absolute inset-y-0 left-0 w-1 bg-[#0056b3] opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="p-3 bg-[#e6f2ff] border border-blue-200 shrink-0 group-hover:scale-110 group-hover:bg-[#0056b3] group-hover:border-[#0056b3] transition-all duration-500">
+                  <feature.icon className="w-8 h-8 text-[#0056b3] group-hover:text-white transition-colors duration-500" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-slate-900 uppercase tracking-wide mb-2 flex items-center gap-2 group-hover:text-[#0056b3] transition-colors">
+                    {feature.title}
+                    <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-[#0056b3] group-hover:translate-x-1 transition-all" />
+                  </h3>
+                  <p className="text-slate-600 text-base leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
           ))}
         </motion.div>
       </div>
 
       {/* Advisory Section */}
-      <div className="border border-slate-300 bg-white">
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="border border-slate-300 bg-white"
+      >
         <div className="p-4 sm:p-6 border-b border-slate-300 bg-slate-50 flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900 uppercase tracking-wide">
             Public Health Advisories
@@ -139,21 +153,21 @@ export function Home() {
         </div>
         
         <div className="divide-y divide-slate-300">
-           <div className="p-4 sm:p-6 flex gap-4 hover:bg-slate-50">
+           <div className="p-4 sm:p-6 flex gap-4 hover:bg-slate-50 transition-colors">
              <div className="mt-1"><Droplets className="w-6 h-6 text-slate-600" /></div>
              <div>
                <h4 className="font-bold text-slate-900 text-lg">Safe Drinking Water Directive</h4>
                <p className="text-slate-700 mt-1">Ensure water is boiled before consumption to mitigate prevalent seasonal water-borne diseases.</p>
              </div>
            </div>
-           <div className="p-4 sm:p-6 flex gap-4 hover:bg-slate-50">
+           <div className="p-4 sm:p-6 flex gap-4 hover:bg-slate-50 transition-colors">
              <div className="mt-1"><Heart className="w-6 h-6 text-slate-600" /></div>
              <div>
                <h4 className="font-bold text-slate-900 text-lg">Sanitation Protocol</h4>
                <p className="text-slate-700 mt-1">Standardize frequent hand-washing practices using soap to prevent community transmission.</p>
              </div>
            </div>
-           <div className="p-4 sm:p-6 flex gap-4 hover:bg-slate-50">
+           <div className="p-4 sm:p-6 flex gap-4 hover:bg-slate-50 transition-colors">
              <div className="mt-1"><Thermometer className="w-6 h-6 text-slate-600" /></div>
              <div>
                <h4 className="font-bold text-slate-900 text-lg">Fever Monitoring</h4>
@@ -161,7 +175,7 @@ export function Home() {
              </div>
            </div>
         </div>
-      </div>
+      </motion.div>
 
     </div>
   );

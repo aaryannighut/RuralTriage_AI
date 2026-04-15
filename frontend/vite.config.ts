@@ -28,50 +28,18 @@ export default defineConfig({
         ws: true,
         changeOrigin: true,
       },
-      '/offer': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/health': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/auth': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/doctors': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/patients': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/health-records': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/pharmacies': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/appointments': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/pharmacists': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/medicines': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-      '/doctor': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
+      ...['/offer', '/health', '/auth', '/doctors', '/patients', '/health-records', '/pharmacies', '/appointments', '/pharmacists', '/medicines', '/doctor'].reduce((acc, path) => ({
+        ...acc,
+        [path]: {
+          target: 'http://localhost:8000',
+          changeOrigin: true,
+          bypass: (req: any) => {
+            if (req.headers.accept?.includes('text/html')) {
+              return '/index.html'
+            }
+          }
+        }
+      }), {})
     },
   },
 })

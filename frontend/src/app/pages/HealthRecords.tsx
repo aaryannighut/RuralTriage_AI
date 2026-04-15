@@ -54,6 +54,7 @@ export function HealthRecords() {
   const [recordError, setRecordError] = useState("");
   const [recordSuccess, setRecordSuccess] = useState("");
   const [recordSaving, setRecordSaving] = useState(false);
+  const [isSandboxMode, setIsSandboxMode] = useState(false);
 
   const [recordFile, setRecordFile] = useState<File | null>(null);
   const [recordTitle, setRecordTitle] = useState("");
@@ -110,6 +111,8 @@ export function HealthRecords() {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || "Remote transmission failed");
 
+      if (data.resource_type === "local") setIsSandboxMode(true);
+
       const newRecord: HealthRecordItem = {
         id: data.public_id || `${Date.now()}`, type: recordType, title: recordTitle.trim(),
         date: new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
@@ -117,7 +120,7 @@ export function HealthRecords() {
       };
 
       await saveRecordsToBackend([newRecord, ...records]);
-      setRecordSuccess("Record accepted into official repository.");
+      setRecordSuccess(data.resource_type === "local" ? "Record accepted into Local Sandbox Repository." : "Record accepted into official repository.");
       setRecordFile(null); setRecordTitle(""); setRecordType("Medical Record");
     } catch (err) { setRecordError(err instanceof Error ? err.message : "Error saving"); }
     finally { setRecordSaving(false); }
@@ -181,6 +184,15 @@ export function HealthRecords() {
 
       {recordError && <div className="p-3 bg-red-50 border border-red-300 text-red-800 text-sm font-bold uppercase tracking-wider">{recordError}</div>}
       {recordSuccess && <div className="p-3 bg-[#e8f5e9] border border-green-300 text-green-900 text-sm font-bold uppercase tracking-wider">{recordSuccess}</div>}
+      
+      {isSandboxMode && (
+        <div className="p-4 bg-[#e6f2ff] border border-blue-200 flex items-center gap-3">
+          <Upload className="w-5 h-5 text-[#0056b3]" />
+          <div className="text-xs font-bold text-[#0056b3] uppercase tracking-wide">
+            Sandbox Mode Active: documents are being stored in the local server repository due to missing Cloudinary configuration.
+          </div>
+        </div>
+      )}
 
       <div className="flex bg-white border border-slate-300">
          <button onClick={() => setSelectedTab("records")} className={`flex-1 p-4 font-bold uppercase tracking-wide border-r border-slate-300 transition-none ${selectedTab === "records" ? "bg-[#0056b3] text-white" : "text-slate-600 hover:bg-slate-100"}`}>Registry Vault</button>
