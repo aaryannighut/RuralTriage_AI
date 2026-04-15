@@ -8,6 +8,7 @@ Groq AI integration is OPTIONAL – endpoints return results with or without it.
 from datetime import datetime
 from typing import Any, List, Optional
 import httpx
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -224,10 +225,11 @@ async def issue_prescription(data: DoctorPrescriptionIn, db: Session = Depends(g
         )
 
     prescription = {
-        "id":          len(patient.prescriptions or []) + 1,
+        "id":          str(uuid.uuid4()),
         "patient_id":  data.patient_id,
         "doctor_id":   doctor.id,
         "doctor_name": doctor.name,
+        "status":      "pending",
         "items": [
             {
                 "medicine": m.name,

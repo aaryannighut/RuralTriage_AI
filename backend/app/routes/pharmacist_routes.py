@@ -283,6 +283,148 @@ def remove_pharmacy_inventory(pharmacy_id: int, medicine_id: int, db: Session = 
         db.commit()
 
 
+# ── NEW DYNAMIC DISPENSARY APIs ───────────────────────────────────────────────
+
+@router.get("/pharmacy/inventory/{pharmacy_id}")
+def get_pharmacy_inventory_v2(pharmacy_id: int, db: Session = Depends(get_db)):
+    rows = db.query(PharmacyInventory, Medicine).join(Medicine).filter(PharmacyInventory.pharmacy_id == pharmacy_id).all()
+    return [{
+        "id": inv.id,
+        "medicine_name": med.name,
+        "quantity": inv.quantity_available,
+        "price": float(med.price),
+        "expiry_date": med.expiry
+    } for inv, med in rows]
+
+class InventoryAddIn(BaseModel):
+    pharmacy_id: int
+    medicine_name: str
+    quantity: int
+    price: float
+    expiry_date: str
+
+@router.post("/pharmacy/inventory/add")
+def add_pharmacy_inventory_v2(data: InventoryAddIn, db: Session = Depends(get_db)):
+    # Find or create medicine
+    med = db.query(Medicine).filter(func.lower(Medicine.name) == data.medicine_name.lower()).first()
+    if not med:
+        med = Medicine(name=data.medicine_name, price=data.price, expiry=data.expiry_date)
+        db.add(med)
+        db.flush()
+    
+    inv = db.query(PharmacyInventory).filter(
+        PharmacyInventory.pharmacy_id == data.pharmacy_id,
+        PharmacyInventory.medicine_id == med.id
+    ).first()
+    
+    if inv:
+        inv.quantity_available += data.quantity
+    else:
+        inv = PharmacyInventory(pharmacy_id=data.pharmacy_id, medicine_id=med.id, quantity_available=data.quantity)
+        db.add(inv)
+    
+    db.commit()
+    return {"status": "success"}
+
+@router.get("/pharmacy/prescriptions/{pharmacy_id}")
+def get_pharmacy_prescriptions_v2(pharmacy_id: int, db: Session = Depends(get_db)):
+    from app.models import Patient
+    patients = db.query(Patient).all()
+    results = []
+    for p in patients:
+        for rx in (p.prescriptions or []):
+            if rx.get("status") in ["pending", "accepted"]:
+                results.append({
+                    "id": rx.get("id"),
+                    "patient_id": p.id,
+                    "patient_name": p.name,
+                    "doctor_name": rx.get("doctor_name"),
+                    "issued_by": rx.get("issued_by"),
+                    "medicines": rx.get("items", []),
+                    "status": rx.get("status"),
+                    "issued_at": rx.get("issued_at")
+                })
+    return sorted(results, key=lambda x: x.get("issued_at", ""), reverse=True)
+
+class PrescriptionStatusUpdateInV2(BaseModel):
+    status: str
+
+@router.put("/pharmacy/prescription/{rx_id}")
+def update_prescription_status_v2(rx_id: str, data: PrescriptionStatusUpdateInV2, db: Session = Depends(get_db)):
+    from app.models import Patient
+    patients = db.query(Patient).all()
+    updated = False
+    for p in patients:
+        pxs = list(p.prescriptions or [])
+        for rx in pxs:
+            if str(rx.get("id")) == rx_id:
+                rx["status"] = data.status
+                updated = True
+                break
+        if updated:
+            p.prescriptions = pxs
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(p, "prescriptions")
+            db.commit()
+            return {"status": "success", "new_status": data.status}
+    raise HTTPException(status_code=404, detail="Prescription not found")
+
+@router.get("/pharmacy/history/{pharmacy_id}")
+def get_pharmacy_history_v2(pharmacy_id: int, db: Session = Depends(get_db)):
+    from app.models import Patient
+    patients = db.query(Patient).all()
+    results = []
+    for p in patients:
+        for rx in (p.prescriptions or []):
+            if rx.get("status") in ["dispensed", "rejected"]:
+                results.append({
+                    "patient_name": p.name,
+                    "medicines": rx.get("items", []),
+                    "date": rx.get("issued_at"),
+                    "status": rx.get("status")
+                })
+    return sorted(results, key=lambda x: x.get("date", ""), reverse=True)
+
+@router.get("/pharmacy/dashboard/stats")
+def get_pharmacy_stats_v2(pharmacy_id: int = Query(...), db: Session = Depends(get_db)):
+    sku_count = db.query(PharmacyInventory).filter(PharmacyInventory.pharmacy_id == pharmacy_id).count()
+    from app.models import Patient
+    all_px = db.query(Patient).all()
+    pending = sum(1 for p in all_px for rx in (p.prescriptions or []) if rx.get("status") == "pending")
+    return {
+        "total_sku": sku_count,
+        "pending_requests": pending,
+        "market_status": "active"
+    }
+
+
+class PrescriptionStatusUpdateIn(BaseModel):
+    status: str
+
+@router.put("/prescriptions/{patient_id}/{rx_id}/status")
+def update_prescription_status(patient_id: int, rx_id: str, data: PrescriptionStatusUpdateIn, db: Session = Depends(get_db)):
+    from app.models import Patient
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    prescriptions = list(patient.prescriptions or [])
+    found = False
+    for rx in prescriptions:
+        if str(rx.get("id")) == str(rx_id):
+            rx["status"] = data.status
+            found = True
+            break
+    
+    if not found:
+        raise HTTPException(status_code=404, detail="Prescription not found")
+    
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(patient, "prescriptions")
+    db.commit()
+    return {"status": "success", "new_status": data.status}
+
+
 @router.get("/user/{user_id}", response_model=PharmacyOut)
 def get_pharmacy_by_user_id(user_id: int, db: Session = Depends(get_db)):
     pharmacy = db.query(Pharmacy).filter(Pharmacy.user_id == user_id).first()
