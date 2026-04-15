@@ -1,0 +1,9 @@
+venv
+
+# Local environment secrets (keep local, do not commit)
+.env
+frontend/.env
+backend/app/config/dev.env
+backend/app/config/*.local.env
+
+RuralCare_Documentation.md
