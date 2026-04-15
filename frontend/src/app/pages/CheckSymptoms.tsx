@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { CheckCircle, Clock, Thermometer, Activity, Trash2, Loader2, Bot, ShieldAlert, Send } from "lucide-react";
+import { CheckCircle, Clock, Thermometer, Activity, Trash2, Loader2, Bot, ShieldAlert, Send, Wind, Brain, Battery, Heart, Droplets, Flame, Frown, AlertCircle, AlertTriangle, CircleDot, RefreshCcw } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 interface SavedSymptom {
@@ -51,17 +51,17 @@ export function CheckSymptoms() {
 
   const commonSymptoms = [
     { id: "fever", label: "Fever", icon: Thermometer },
-    { id: "cough", label: "Cough", icon: Activity },
-    { id: "headache", label: "Headache", icon: Activity },
-    { id: "fatigue", label: "Fatigue", icon: Activity },
-    { id: "bodyache", label: "Body Ache", icon: Activity },
-    { id: "cold", label: "Cold/Runny Nose", icon: Activity },
-    { id: "sore-throat", label: "Sore Throat", icon: Activity },
-    { id: "nausea", label: "Nausea", icon: Activity },
-    { id: "diarrhea", label: "Diarrhea", icon: Activity },
-    { id: "vomiting", label: "Vomiting", icon: Activity },
-    { id: "rash", label: "Skin Rash", icon: Activity },
-    { id: "dizziness", label: "Dizziness", icon: Activity },
+    { id: "cough", label: "Cough", icon: Wind },
+    { id: "headache", label: "Headache", icon: Brain },
+    { id: "fatigue", label: "Fatigue", icon: Battery },
+    { id: "bodyache", label: "Body Ache", icon: Heart },
+    { id: "cold", label: "Cold/Runny Nose", icon: Droplets },
+    { id: "sore-throat", label: "Sore Throat", icon: Flame },
+    { id: "nausea", label: "Nausea", icon: Frown },
+    { id: "diarrhea", label: "Diarrhea", icon: AlertCircle },
+    { id: "vomiting", label: "Vomiting", icon: AlertTriangle },
+    { id: "rash", label: "Skin Rash", icon: CircleDot },
+    { id: "dizziness", label: "Dizziness", icon: RefreshCcw },
   ];
 
   useEffect(() => {
