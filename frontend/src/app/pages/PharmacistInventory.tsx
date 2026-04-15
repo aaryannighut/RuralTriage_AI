@@ -64,7 +64,7 @@ const CATEGORIES: Category[] = [
   "Diabetes", "Cholesterol", "Blood Pressure", "Antibiotic", "Pain Relief", "Supplement", "Cardiac", "Thyroid", "Antacid", "Other",
 ];
 
-export function PharmacistDashboard() {
+export function PharmacistInventory() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,10 +85,27 @@ export function PharmacistDashboard() {
   // Selected Rx for detailed processing
   const [selectedRx, setSelectedRx] = useState<IncomingPrescription | null>(null);
   const [processingStatus, setProcessingStatus] = useState(false);
+  const [preparingOrder, setPreparingOrder] = useState(false);
+  const [orderItems, setOrderItems] = useState<{name: string, quantity: number, price: number, stock: number}[]>([]);
+
+  // Inventory Filter Overrides
+  const [filterLowStock, setFilterLowStock] = useState(false);
+  const [filterExpiring, setFilterExpiring] = useState(false);
 
   // Inventory Modal States
   const [showInvModal, setShowInvModal] = useState(false);
-  const [invFormData, setInvFormData] = useState({ id: null as number | null, medicine_name: "", quantity: "" as string | number, price: "" as string | number, expiry_date: "" });
+  const [invFormData, setInvFormData] = useState({ 
+    id: null as number | null, 
+    medicine_name: "", 
+    quantity: "" as string | number, 
+    price: "" as string | number, 
+    expiry_date: "",
+    brand: "",
+    category: "Other" as Category,
+    dose: "",
+    form: "Tablet",
+    manufacturer: ""
+  });
   const [savingInv, setSavingInv] = useState(false);
 
   useEffect(() => {
@@ -160,8 +177,6 @@ export function PharmacistDashboard() {
       });
       if (!res.ok) throw new Error("Failed to update dispensation status.");
       
-      // If dispensed, we should ideally decrement stock in the backend (ideally the backend handles this).
-      // For this dynamic overhaul, we reload the data immediately.
       await fetchData();
       setSelectedRx(null);
     } catch (err: any) {
@@ -169,6 +184,60 @@ export function PharmacistDashboard() {
     } finally {
       setProcessingStatus(false);
     }
+  };
+
+  const startOrderPrep = () => {
+    if (!selectedRx) return;
+    const prep = selectedRx.medicines.map(m => {
+        const invMatch = inventory.find(i => i.name.toLowerCase() === m.medicine.toLowerCase());
+        return {
+            name: m.medicine,
+            quantity: invMatch && invMatch.stock > 0 ? 1 : 0, 
+            price: invMatch ? invMatch.price : 0,
+            stock: invMatch ? invMatch.stock : 0
+        };
+    });
+    setOrderItems(prep);
+    setPreparingOrder(true);
+  };
+
+  const updateOrderItemQty = (idx: number, qty: number) => {
+    const arr = [...orderItems];
+    arr[idx].quantity = Math.max(0, Math.min(qty, arr[idx].stock)); // clamp between 0 and available stock
+    setOrderItems(arr);
+  };
+
+  const finalizeDispensation = async () => {
+    if (!selectedRx) return;
+    setProcessingStatus(true);
+    try {
+        const billedAmt = orderItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+        const itemsPayload = orderItems.filter(i => i.quantity > 0).map(i => ({ medicine_name: i.name, quantity: i.quantity, price: i.price }));
+        
+        const res = await fetch(`/pharmacies/pharmacy/prescription/${selectedRx.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+               status: "dispensed",
+               pharmacy_id: profile?.id,
+               items: itemsPayload,
+               total_billed: billedAmt
+            })
+        });
+        if (!res.ok) throw new Error("Failed to finalize order.");
+        
+        await fetchData();
+        setPreparingOrder(false);
+        setSelectedRx(null);
+    } catch(err: any) {
+        alert(err.message);
+    } finally {
+        setProcessingStatus(false);
+    }
+  };
+
+  const printInvoice = () => {
+    window.print();
   };
 
   const isExpiringSoon = (expiryStr: string) => {
@@ -222,7 +291,12 @@ export function PharmacistDashboard() {
                 medicine_name: invFormData.medicine_name, 
                 quantity: q, 
                 price: p, 
-                expiry_date: invFormData.expiry_date 
+                expiry_date: invFormData.expiry_date,
+                brand: invFormData.brand,
+                category: invFormData.category,
+                dose: invFormData.dose,
+                form: invFormData.form,
+                manufacturer: invFormData.manufacturer
             })
          });
          if (!res.ok) throw new Error("Failed to add inventory.");
@@ -248,12 +322,12 @@ export function PharmacistDashboard() {
   };
 
   const openAddModal = () => {
-    setInvFormData({ id: null, medicine_name: "", quantity: "", price: "", expiry_date: "" });
+    setInvFormData({ id: null, medicine_name: "", quantity: "", price: "", expiry_date: "", brand: "", category: "Other", dose: "", form: "Tablet", manufacturer: "" });
     setShowInvModal(true);
   };
 
   const openEditModal = (m: Medicine) => {
-    setInvFormData({ id: m.id, medicine_name: m.name, quantity: m.stock, price: m.price, expiry_date: m.expiry });
+    setInvFormData({ id: m.id, medicine_name: m.name, quantity: m.stock, price: m.price, expiry_date: m.expiry, brand: m.brand, category: m.category, dose: m.dose, form: m.form, manufacturer: m.manufacturer });
     setShowInvModal(true);
   };
 
@@ -267,7 +341,9 @@ export function PharmacistDashboard() {
   const filteredInv = inventory.filter(m => {
     const q = search.toLowerCase();
     const matchSearch = !q || m.name.toLowerCase().includes(q);
-    return matchSearch;
+    const matchLowStock = !filterLowStock || m.stock < 10;
+    const matchExpiring = !filterExpiring || isExpiringSoon(m.expiry);
+    return matchSearch && matchLowStock && matchExpiring;
   });
 
   if (loading) return (
@@ -300,190 +376,29 @@ export function PharmacistDashboard() {
         </div>
       </div>
 
-      {/* Analytics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { label: "Active Requests", val: stats.active_requests, icon: ClipboardList, color: "blue" },
-          { label: "Total Inventory (SKU)", val: stats.total_inventory, icon: Package, color: "slate" },
-          { label: "Low Stock Alerts", val: stats.low_stock, icon: AlertCircle, color: "red" },
-          { label: "Market Status", val: stats.market_status.toUpperCase(), icon: TrendingUp, color: "green" },
+          { label: "Active Requests", val: stats.active_requests, icon: ClipboardList },
+          { label: "Total Orders", val: stats.total_orders || 0, icon: CheckCircle2 },
+          { label: "Revenue (₹)", val: stats.revenue || 0, icon: IndianRupee },
+          { label: "Total SKU", val: stats.total_inventory, icon: Package },
+          { label: "Low Stock", val: stats.low_stock, icon: AlertCircle },
         ].map((stat, i) => (
           <div key={i} className={`bg-white border-l-4 border-slate-600 border border-slate-200 p-4 shadow-sm group hover:shadow-md transition-all`}>
             <div className="flex justify-between items-center">
-              <div>
+              <div className="truncate">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
                 <div className={`text-xl font-black mt-1 text-slate-900`}>{stat.val}</div>
               </div>
-              <stat.icon className={`w-8 h-8 text-slate-100`} />
+              <stat.icon className={`w-6 h-6 text-slate-100 flex-shrink-0`} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-300 bg-white">
-        {[
-          { id: "dispensary", label: "Active Dispensary", icon: LayoutDashboard },
-          { id: "inventory", label: "Inventory Pool", icon: Pill },
-          { id: "history", label: "Transaction History", icon: History },
-        ].map(tab => (
-          <button 
-            key={tab.id}
-            onClick={() => { setActiveTab(tab.id as any); navigate(`#${tab.id}`); }}
-            className={`flex-1 py-4 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? "bg-slate-50 text-[#0056b3] border-b-2 border-[#0056b3]" : "text-slate-400 hover:text-slate-600"}`}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
 
-      {/* ── SECTION 1: DISPENSARY ────────────────────────────────────────────────── */}
-      {activeTab === "dispensary" && (
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left Column: List */}
-          <div className="lg:col-span-1 space-y-4">
-            <div className="bg-slate-100 p-4 border border-slate-300 flex items-center justify-between">
-               <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2"><div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"/> Incoming Queue</h2>
-               <span className="text-[9px] font-black bg-white border border-slate-300 px-2 py-0.5">{rxList.length} New</span>
-            </div>
-            
-            <div className="space-y-3">
-              {rxList.map(rx => (
-                <div 
-                  key={rx.id} 
-                  onClick={() => setSelectedRx(rx)}
-                  className={`p-4 border cursor-pointer transition-all hover:translate-x-1 ${selectedRx?.id === rx.id ? "bg-[#0056b3] text-white border-[#0056b3] shadow-lg" : "bg-white border-slate-200 text-slate-900 shadow-sm"}`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-[10px] font-black uppercase tracking-tighter opacity-70">Rx-#{rx.id.slice(0,8)}</span>
-                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 border ${rx.status === "pending" ? "bg-yellow-100 text-yellow-800 border-yellow-200" : "bg-green-100 text-green-800 border-green-200"}`}>{rx.status}</span>
-                  </div>
-                  <h3 className="font-black uppercase text-sm leading-tight">{rx.patient_name}</h3>
-                  <p className={`text-[10px] font-bold mt-1 ${selectedRx?.id === rx.id ? "text-blue-100" : "text-slate-400"}`}>{rx.doctor_name || rx.issued_by} • {new Date(rx.issued_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-              ))}
-              {rxList.length === 0 && (
-                <div className="py-20 bg-white border border-dash border-slate-200 text-center">
-                  <ClipboardList className="w-8 h-8 mx-auto text-slate-200 mb-2" />
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No Active Requisitions</p>
-                </div>
-              )}
-            </div>
-          </div>
 
-          {/* Right Column: Processing Detail */}
-          <div className="lg:col-span-2">
-            {!selectedRx ? (
-              <div className="h-full bg-slate-50 border border-slate-200 flex flex-col items-center justify-center p-12 text-center text-slate-400">
-                <LayoutDashboard className="w-16 h-16 mb-4 opacity-10" />
-                <h3 className="text-xl font-black uppercase tracking-tighter">Selection Required</h3>
-                <p className="text-xs font-bold uppercase tracking-widest mt-2 max-w-xs leading-relaxed">Select an incoming digital prescription from the queue to initiate dispensation workflow.</p>
-              </div>
-            ) : (
-              <div className="bg-white border-2 border-slate-900 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none font-black text-6xl transform rotate-12">DISPENSARY</div>
-                
-                {/* Rx Header */}
-                <div className="bg-slate-900 text-white p-6 flex justify-between items-start">
-                  <div>
-                    <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">Medical Prescription</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-2">Authenticated Digital Order • Patient Ref: P-{selectedRx.patient_id}</p>
-                  </div>
-                  <button onClick={() => setSelectedRx(null)} className="p-2 hover:bg-white/10 transition-colors"><X className="w-5 h-5"/></button>
-                </div>
-
-                <div className="p-8 space-y-8">
-                  <div className="grid md:grid-cols-2 gap-8 border-b border-slate-100 pb-8">
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Prescribing Clinician</p>
-                      <p className="text-lg font-black uppercase text-slate-900">{selectedRx.doctor_name || selectedRx.issued_by}</p>
-                      <p className="text-[10px] font-bold text-[#0056b3] uppercase mt-0.5">Verified Medical Practitioner</p>
-                    </div>
-                    <div className="md:text-right">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Issue Timestamp</p>
-                      <p className="text-sm font-bold uppercase text-slate-700">{new Date(selectedRx.issued_at).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })}</p>
-                    </div>
-                  </div>
-
-                  {/* Medicine List */}
-                  <div>
-                    <h4 className="text-[11px] font-black uppercase tracking-widest text-[#0056b3] mb-4 flex items-center gap-2">
-                       <Pill className="w-4 h-4" /> Itemized Medication list
-                    </h4>
-                    <div className="divide-y-2 divide-slate-50 border-y border-slate-100">
-                      {selectedRx.medicines.map((item, id) => (
-                        <div key={id} className="py-4 flex justify-between group">
-                          <div>
-                            <div className="flex items-center gap-2">
-                               <p className="text-base font-black uppercase text-slate-900">{item.medicine}</p>
-                               <span className="text-[9px] font-black bg-slate-100 text-slate-600 px-2 py-0.5">X{item.duration || "Course"}</span>
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase mt-1 tracking-wide">{item.dosage} • {item.notes}</p>
-                          </div>
-                          <div className="text-right">
-                             <p className="text-sm font-black text-slate-900">₹{inventory.find(m => m.name.toLowerCase() === item.medicine.toLowerCase())?.price || "—"}</p>
-                             {inventory.find(m => m.name.toLowerCase() === item.medicine.toLowerCase())?.stock === 0 && <p className="text-[9px] font-black text-red-600 uppercase mt-1 animate-pulse">STOCK FAILURE</p>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Billing Summary */}
-                  <div className="bg-slate-50 p-6 border-l-8 border-[#0056b3] flex justify-between items-center group">
-                    <div>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Calculated Dispensation Cost</p>
-                      <div className="flex items-center text-4xl font-black text-[#0056b3] tracking-tighter">
-                         <IndianRupee className="w-8 h-8" strokeWidth={3} />
-                         {calculateBill(selectedRx.medicines)}
-                      </div>
-                    </div>
-                    <div className="hidden md:block opacity-10 group-hover:opacity-20 transition-opacity">
-                       <FileText className="w-12 h-12" />
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-col md:flex-row gap-3 pt-6">
-                    {selectedRx.status === "pending" ? (
-                      <>
-                        <button 
-                          onClick={() => handleUpdateStatus(selectedRx.id, "accepted")}
-                          disabled={processingStatus}
-                          className="flex-1 py-4 bg-[#0056b3] text-white font-black uppercase tracking-[0.2em] text-xs shadow-xl hover:bg-blue-800 transition-all flex justify-center items-center gap-2"
-                        >
-                           {processingStatus ? <Loader2 className="animate-spin w-4 h-4"/> : "Accept Prescription"}
-                        </button>
-                        <button 
-                          onClick={() => handleUpdateStatus(selectedRx.id, "rejected")}
-                          disabled={processingStatus}
-                          className="px-8 py-4 bg-white border-2 border-red-600 text-red-600 font-black uppercase tracking-[0.2em] text-xs hover:bg-red-50 transition-all"
-                        >
-                           Out of Stock
-                        </button>
-                      </>
-                    ) : (
-                      <button 
-                         onClick={() => handleUpdateStatus(selectedRx.id, "dispensed")}
-                         disabled={processingStatus}
-                         className="flex-1 py-4 bg-green-600 text-white font-black uppercase tracking-[0.2em] text-xs shadow-xl hover:bg-green-700 transition-all flex justify-center items-center gap-2"
-                      >
-                         {processingStatus ? <Loader2 className="animate-spin w-4 h-4"/> : <CheckCircle2 className="w-5 h-5"/>}
-                         Finalize dispensation & Update Stock
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── SECTION 2: INVENTORY ────────────────────────────────────────────────── */}
-      {activeTab === "inventory" && (
-        <div className="space-y-4">
+      <div className="space-y-4">
            {/* Controls */}
            <div className="bg-white border border-slate-300 p-4 flex flex-col md:flex-row gap-4 items-center shadow-sm">
               <div className="relative flex-1 container">
@@ -493,11 +408,13 @@ export function PharmacistDashboard() {
                    className="w-full pl-10 pr-4 py-3 border border-slate-200 bg-slate-50 text-xs font-black uppercase outline-none focus:border-[#0056b3] transition-all"
                  />
               </div>
-              <div className="flex gap-2 w-full md:w-auto">
-                <button onClick={openAddModal} className="flex-1 md:flex-none px-6 py-3 bg-[#0056b3] text-white font-black uppercase text-[10px] tracking-widest shadow-md flex items-center gap-2 whitespace-nowrap">
-                   <Plus className="w-4 h-4" /> Add Medication
-                </button>
-              </div>
+              <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0 flex-wrap">
+                 <button onClick={() => setFilterLowStock(!filterLowStock)} className={`px-4 py-3 border text-[10px] font-black uppercase tracking-widest transition-all ${filterLowStock ? 'bg-red-50 border-red-500 text-red-600' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}>Alerts <span className="text-red-500 ml-1">({stats.low_stock})</span></button>
+                 <button onClick={() => setFilterExpiring(!filterExpiring)} className={`px-4 py-3 border text-[10px] font-black uppercase tracking-widest transition-all ${filterExpiring ? 'bg-yellow-50 border-yellow-500 text-yellow-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}>Expiring</button>
+                 <button onClick={openAddModal} className="flex-1 md:flex-none px-6 py-3 bg-[#0056b3] text-white font-black uppercase text-[10px] tracking-widest shadow-md flex items-center justify-center gap-2 whitespace-nowrap hover:bg-blue-800">
+                    <Plus className="w-4 h-4" /> Add Medication
+                 </button>
+               </div>
            </div>
 
            {/* Table */}
@@ -518,7 +435,8 @@ export function PharmacistDashboard() {
                           <tr key={m.id} className="hover:bg-slate-50 transition-colors group">
                              <td className="px-6 py-5">
                                 <div className="font-black text-slate-900 uppercase text-sm">{m.name}</div>
-                                <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-wide">{m.brand || "Generics"}</div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-wide">{m.brand || "Generics"} • {m.form} • {m.dose}</div>
+                                <div className="text-[9px] font-black text-[#0056b3] uppercase tracking-widest mt-1 opacity-60">{m.manufacturer}</div>
                              </td>
                              <td className="px-6 py-5 text-center">
                                 <div className="flex flex-col items-center gap-1">
@@ -553,61 +471,8 @@ export function PharmacistDashboard() {
               </div>
            </div>
         </div>
-      )}
 
-      {/* ── SECTION 3: HISTORY ────────────────────────────────────────────────── */}
-      {activeTab === "history" && (
-        <div className="bg-white border-2 border-slate-900 shadow-xl overflow-hidden">
-           <div className="bg-slate-900 p-4 border-b border-white/10 flex justify-between items-center">
-              <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-300">Dispensation Ledger</h2>
-              <button onClick={exportHistoryCSV} className="text-[9px] font-black text-[#0056b3] uppercase tracking-widest flex items-center gap-1 bg-white px-3 py-1 hover:bg-slate-200 transition-colors">Export CSV</button>
-           </div>
-           
-           <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                 <thead className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
-                    <tr>
-                       <th className="px-6 py-4">Transaction Date</th>
-                       <th className="px-6 py-4">Medicine List</th>
-                       <th className="px-6 py-4 text-center">Qty Change</th>
-                       <th className="px-6 py-4 text-center">Action</th>
-                       <th className="px-6 py-4 text-right">Audit</th>
-                    </tr>
-                 </thead>
-                 <tbody className="divide-y divide-slate-100">
-                    {historyList.map((txn, idx) => (
-                       <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-5">
-                             <div className="text-xs font-black text-slate-900 uppercase">{txn.date ? new Date(txn.date).toLocaleDateString() : "N/A"}</div>
-                             <div className="text-[10px] font-bold text-slate-400 mt-0.5">{txn.date ? new Date(txn.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}</div>
-                          </td>
-                          <td className="px-6 py-5">
-                             <div className="text-sm font-black text-slate-900 uppercase">{txn.medicine}</div>
-                          </td>
-                          <td className="px-6 py-5 text-center">
-                             <span className={`text-base font-black ${txn.quantity_change > 0 ? "text-green-600" : "text-red-600"}`}>{txn.quantity_change > 0 ? `+${txn.quantity_change}` : txn.quantity_change}</span>
-                          </td>
-                          <td className="px-6 py-5 text-center">
-                             <span className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest border ${txn.action === "added" ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>{txn.action}</span>
-                          </td>
-                          <td className="px-6 py-5 text-right">
-                             <button className="text-[10px] font-black text-[#0056b3] uppercase tracking-widest underline decoration-2 underline-offset-4">Audit Details</button>
-                          </td>
-                       </tr>
-                    ))}
-                    {historyList.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="py-20 text-center">
-                          <History className="w-12 h-12 mx-auto text-slate-100 mb-2" />
-                          <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">No Historical Records Compiled</p>
-                        </td>
-                      </tr>
-                    )}
-                 </tbody>
-              </table>
-           </div>
-        </div>
-      )}
+
 
       {/* ADD/EDIT INVENTORY MODAL */}
       {showInvModal && (
@@ -617,10 +482,44 @@ export function PharmacistDashboard() {
                 <h3 className="text-sm font-black uppercase tracking-widest">{invFormData.id ? "Update Operational Stock" : "Registry Add: New Medication"}</h3>
                 <button onClick={() => setShowInvModal(false)} className="hover:text-red-400 transition-colors"><X className="w-5 h-5"/></button>
              </div>
-             <div className="p-6 space-y-4">
+             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div>
                   <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Clinical Designation</label>
-                  <input type="text" value={invFormData.medicine_name} onChange={e => setInvFormData({...invFormData, medicine_name: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50 disabled:cursor-not-allowed" placeholder="E.g. PARACETAMOL 500MG"/>
+                  <input type="text" value={invFormData.medicine_name} onChange={e => setInvFormData({...invFormData, medicine_name: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50 disabled:cursor-not-allowed" placeholder="E.g. PARACETAMOL"/>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Brand Name</label>
+                     <input type="text" value={invFormData.brand} onChange={e => setInvFormData({...invFormData, brand: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50" placeholder="E.g. Calpol"/>
+                   </div>
+                   <div>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Drug Category</label>
+                     <select value={invFormData.category} onChange={e => setInvFormData({...invFormData, category: e.target.value as Category})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50">
+                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                     </select>
+                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Dosage</label>
+                     <input type="text" value={invFormData.dose} onChange={e => setInvFormData({...invFormData, dose: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50" placeholder="E.g. 500 MG"/>
+                   </div>
+                   <div>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Form (Format)</label>
+                     <select value={invFormData.form} onChange={e => setInvFormData({...invFormData, form: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50">
+                        <option value="Tablet">Tablet</option>
+                        <option value="Syrup">Syrup</option>
+                        <option value="Injection">Injection</option>
+                        <option value="Capsule">Capsule</option>
+                        <option value="Ointment">Ointment</option>
+                        <option value="Drops">Drops</option>
+                        <option value="Powder">Powder</option>
+                     </select>
+                   </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Manufacturer</label>
+                  <input type="text" value={invFormData.manufacturer} onChange={e => setInvFormData({...invFormData, manufacturer: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50" placeholder="E.g. GSK Ltd"/>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                    <div>

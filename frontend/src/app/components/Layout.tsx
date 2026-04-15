@@ -33,8 +33,8 @@ export function Layout() {
   ];
 
   const pharmacistNavItems = [
-    { name: "Dispensary", path: "/dashboard/pharmacist", icon: <Pill className="w-5 h-5" /> },
-    { name: "Inventory", path: "/dashboard/pharmacist#inventory", icon: <ClipboardList className="w-5 h-5" /> },
+    { name: "Dispensary", path: "/dashboard/pharmacist/dispensary", icon: <Pill className="w-5 h-5" /> },
+    { name: "Inventory", path: "/dashboard/pharmacist/inventory", icon: <ClipboardList className="w-5 h-5" /> },
   ];
 
   const navItems = user.role === "doctor"

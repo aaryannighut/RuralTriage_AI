@@ -293,7 +293,12 @@ def get_pharmacy_inventory_v2(pharmacy_id: int, db: Session = Depends(get_db)):
         "medicine_name": med.name,
         "quantity": inv.quantity_available,
         "price": float(med.price),
-        "expiry_date": med.expiry
+        "expiry_date": med.expiry,
+        "brand": med.brand,
+        "category": med.category,
+        "dose": med.dose,
+        "form": med.form,
+        "manufacturer": med.manufacturer
     } for inv, med in rows]
 
 class InventoryAddIn(BaseModel):
@@ -302,13 +307,22 @@ class InventoryAddIn(BaseModel):
     quantity: int
     price: float
     expiry_date: str
+    brand: Optional[str] = "Generic"
+    category: Optional[str] = "Other"
+    dose: Optional[str] = "Standard"
+    form: Optional[str] = "Tablet"
+    manufacturer: Optional[str] = "Verified Lab"
 
 @router.post("/pharmacy/inventory/add")
 def add_pharmacy_inventory_v2(data: InventoryAddIn, db: Session = Depends(get_db)):
     # Find or create medicine
     med = db.query(Medicine).filter(func.lower(Medicine.name) == data.medicine_name.lower()).first()
     if not med:
-        med = Medicine(name=data.medicine_name, price=data.price, expiry=data.expiry_date)
+        med = Medicine(
+            name=data.medicine_name, price=data.price, expiry=data.expiry_date,
+            brand=data.brand, category=data.category, dose=data.dose,
+            form=data.form, manufacturer=data.manufacturer
+        )
         db.add(med)
         db.flush()
     
@@ -421,8 +435,20 @@ def get_pharmacy_prescriptions_v2(pharmacy_id: int, db: Session = Depends(get_db
                 })
     return sorted(results, key=lambda x: x.get("issued_at", ""), reverse=True)
 
+from typing import Optional, List
+from sqlalchemy import func
+from app.models import PharmacyTransaction, PharmacyInventory, Medicine
+
+class OrderItemIn(BaseModel):
+    medicine_name: str
+    quantity: int
+    price: float
+
 class PrescriptionStatusUpdateInV2(BaseModel):
     status: str
+    pharmacy_id: Optional[int] = None
+    items: Optional[List[OrderItemIn]] = None
+    total_billed: Optional[float] = None
 
 @router.put("/pharmacy/prescription/{rx_id}")
 def update_prescription_status_v2(rx_id: str, data: PrescriptionStatusUpdateInV2, db: Session = Depends(get_db)):
@@ -435,6 +461,33 @@ def update_prescription_status_v2(rx_id: str, data: PrescriptionStatusUpdateInV2
             if str(rx.get("id")) == rx_id:
                 rx["status"] = data.status
                 updated = True
+                
+                # If dispensing, subtract inventory and log "sold"
+                if data.status == "dispensed" and data.pharmacy_id and data.items:
+                    for item in data.items:
+                        inv = db.query(PharmacyInventory).join(Medicine).filter(
+                            PharmacyInventory.pharmacy_id == data.pharmacy_id,
+                            func.lower(Medicine.name) == item.medicine_name.lower()
+                        ).first()
+                        if inv:
+                            inv.quantity_available = max(0, inv.quantity_available - item.quantity)
+                            txn = PharmacyTransaction(
+                                pharmacy_id=data.pharmacy_id,
+                                medicine_name=item.medicine_name,
+                                quantity_change=-item.quantity,
+                                action="sold"
+                            )
+                            db.add(txn)
+                    
+                    # Log revenue as a special transaction
+                    if data.total_billed is not None:
+                        rev_txn = PharmacyTransaction(
+                            pharmacy_id=data.pharmacy_id,
+                            medicine_name="ORDER_REVENUE",
+                            quantity_change=int(data.total_billed),
+                            action="revenue"
+                        )
+                        db.add(rev_txn)
                 break
         if updated:
             p.prescriptions = pxs
@@ -469,10 +522,18 @@ def get_pharmacy_stats_v2(pharmacy_id: int = Query(...), db: Session = Depends(g
     from app.models import Patient
     all_px = db.query(Patient).all()
     pending = sum(1 for p in all_px for rx in (p.prescriptions or []) if rx.get("status") == "pending")
+
+    # Analytics from transactions
+    txns = db.query(PharmacyTransaction).filter(PharmacyTransaction.pharmacy_id == pharmacy_id).all()
+    total_orders = sum(1 for t in txns if t.action == "revenue")
+    revenue = sum(t.quantity_change for t in txns if t.action == "revenue")
+
     return {
         "active_requests": pending,
         "total_inventory": sku_count,
         "low_stock": low_stock,
+        "total_orders": total_orders,
+        "revenue": revenue,
         "market_status": "active"
     }
 
