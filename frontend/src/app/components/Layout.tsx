@@ -63,10 +63,10 @@ export function Layout() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white font-sans text-slate-900 selection:bg-[#e6f2ff]">
       {/* Mobile Top Bar */}
-      <div className="lg:hidden flex items-center justify-between p-4 border-b border-slate-300 bg-white z-50 sticky top-0">
-        <Link to="/" className="flex items-center gap-0">
-          <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain scale-125" />
-          <span className="text-xl font-bold text-slate-900 tracking-tight -ml-3">RuralTriage AI</span>
+      <div className="lg:hidden flex items-center justify-between p-3 border-b border-slate-300 bg-white z-50 sticky top-0">
+        <Link to="/" className="flex items-center gap-2">
+          <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
+          <span className="text-xl font-bold text-slate-900 tracking-tight">RuralTriage AI</span>
         </Link>
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 border border-slate-300 rounded-sm">
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -74,10 +74,10 @@ export function Layout() {
       </div>
 
       {/* Sidebar Navigation */}
-      <aside className={`${mobileMenuOpen ? "block" : "hidden"} lg:flex flex-col w-full lg:w-72 border-r border-slate-300 bg-white h-screen sticky top-0 z-40 overflow-y-auto`}> 
-        <div className="hidden lg:flex items-center gap-0 p-6 pl-2 border-b border-slate-300">
-          <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain scale-[1.5] -ml-2" />
-          <span className="text-2xl font-bold text-slate-900 tracking-tight leading-none -ml-4">RuralTriage AI</span>
+      <aside className={`${mobileMenuOpen ? "block" : "hidden"} lg:flex flex-col w-full lg:w-64 border-r border-slate-300 bg-white h-screen sticky top-0 z-40 overflow-y-auto`}> 
+        <div className="hidden lg:flex items-center gap-2 px-6 py-4 border-b border-slate-300">
+          <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
+          <span className="text-xl font-bold text-slate-900 tracking-tight leading-none">RuralTriage AI</span>
         </div>
 
         <div className="p-4 flex-1 space-y-2 mt-4">

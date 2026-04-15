@@ -42,26 +42,36 @@ export function Home() {
 
       <div className="border border-slate-300 bg-white">
         {/* Header Block */}
-        <div className="p-6 md:p-10 border-b border-slate-300 bg-slate-50">
-          <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4 uppercase tracking-tight">
-            Healthcare Access
-          </h1>
-          <p className="text-lg text-slate-700 max-w-3xl leading-relaxed mb-6">
-            Consult registered practitioners online, perform initial triage, locate essential medicines, and manage authorized health records securely.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <Link
-              to="/talk-to-doctor"
-              className="px-6 py-3 bg-[#0056b3] text-white font-bold text-sm uppercase tracking-wide hover:bg-blue-800 transition-none"
-            >
-              Start Consultation
-            </Link>
-            <Link
-              to="/check-symptoms"
-              className="px-6 py-3 bg-white text-[#0056b3] border border-[#0056b3] font-bold text-sm uppercase tracking-wide hover:bg-[#e6f2ff] transition-none"
-            >
-              Triage Symptoms
-            </Link>
+        <div className="border-b border-slate-300 bg-slate-50 relative overflow-hidden flex flex-col md:flex-row">
+          <div className="p-6 md:p-12 z-10 relative flex-1">
+            <div className="inline-block px-3 py-1 bg-blue-100 text-[#0056b3] text-[10px] font-black uppercase tracking-[0.2em] mb-4">Patient Portal</div>
+            <h1 className="text-3xl lg:text-5xl font-black text-slate-900 mb-4 uppercase tracking-tighter leading-none">
+              Healthcare Access
+            </h1>
+            <p className="text-sm md:text-base font-bold text-slate-500 max-w-xl leading-relaxed mb-8 uppercase tracking-wide">
+              Consult registered practitioners online, perform initial triage, locate essential medicines, and manage authorized health records securely.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                to="/talk-to-doctor"
+                className="px-8 py-4 bg-[#0056b3] text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:shadow-2xl hover:bg-blue-800 transition-all hover:-translate-y-1"
+              >
+                Start Consultation
+              </Link>
+              <Link
+                to="/check-symptoms"
+                className="px-8 py-4 bg-white text-[#0056b3] border border-slate-200 shadow-sm font-black text-[11px] uppercase tracking-[0.2em] hover:bg-slate-50 transition-all hover:-translate-y-1"
+              >
+                Triage Symptoms
+              </Link>
+            </div>
+          </div>
+          
+          <div 
+             className="hidden md:block absolute right-0 top-0 bottom-0 w-1/2 overflow-hidden pointer-events-none mix-blend-multiply opacity-90"
+             style={{ maskImage: 'linear-gradient(to right, transparent, black 15%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%)' }}
+          >
+             <img src="/dashboard_art.png" alt="Medical Illustration" className="w-full h-full object-cover object-center scale-105" />
           </div>
         </div>
 
