@@ -92,10 +92,7 @@ export function PharmacistDispensary() {
   const [filterLowStock, setFilterLowStock] = useState(false);
   const [filterExpiring, setFilterExpiring] = useState(false);
 
-  // Inventory Modal States
-  const [showInvModal, setShowInvModal] = useState(false);
-  const [invFormData, setInvFormData] = useState({ id: null as number | null, medicine_name: "", quantity: "" as string | number, price: "" as string | number, expiry_date: "" });
-  const [savingInv, setSavingInv] = useState(false);
+
 
   useEffect(() => {
     const hash = location.hash.replace("#", "");
@@ -127,8 +124,11 @@ export function PharmacistDispensary() {
            stock: inv.quantity,
            price: inv.price,
            expiry: inv.expiry_date,
-           brand: "Verified", // Fallback
-           category: "Other" // Fallback
+           brand: inv.brand || "Generics",
+           category: inv.category || "Other",
+           dose: inv.dose || "N/A",
+           form: inv.form || "Tablet",
+           manufacturer: inv.manufacturer || "N/A"
         })));
       }
       if (rxRes.ok) setRxList(await rxRes.json());
@@ -255,65 +255,7 @@ export function PharmacistDispensary() {
     document.body.removeChild(link);
   };
 
-  const handleSaveInventory = async () => {
-    if (!profile) return;
-    setSavingInv(true);
-    try {
-      const q = parseInt(invFormData.quantity.toString()) || 0;
-      const p = parseFloat(invFormData.price.toString()) || 0;
 
-      if (invFormData.id) {
-         // Update
-         const res = await fetch(`/pharmacies/pharmacy/inventory/update/${invFormData.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ quantity: q, price: p, expiry_date: invFormData.expiry_date })
-         });
-         if (!res.ok) throw new Error("Failed to update inventory.");
-      } else {
-         // Add
-         const res = await fetch(`/pharmacies/pharmacy/inventory/add`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                pharmacy_id: profile.id, 
-                medicine_name: invFormData.medicine_name, 
-                quantity: q, 
-                price: p, 
-                expiry_date: invFormData.expiry_date 
-            })
-         });
-         if (!res.ok) throw new Error("Failed to add inventory.");
-      }
-      setShowInvModal(false);
-      fetchData();
-    } catch(err: any) {
-      alert(err.message);
-    } finally {
-      setSavingInv(false);
-    }
-  };
-
-  const handleDeleteInventory = async (invId: number) => {
-    if (!confirm("Are you sure you want to remove this medication from inventory?")) return;
-    try {
-      const res = await fetch(`/pharmacies/pharmacy/inventory/delete/${invId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete inventory.");
-      fetchData();
-    } catch(err: any) {
-      alert(err.message);
-    }
-  };
-
-  const openAddModal = () => {
-    setInvFormData({ id: null, medicine_name: "", quantity: "", price: "", expiry_date: "" });
-    setShowInvModal(true);
-  };
-
-  const openEditModal = (m: Medicine) => {
-    setInvFormData({ id: m.id, medicine_name: m.name, quantity: m.stock, price: m.price, expiry_date: m.expiry });
-    setShowInvModal(true);
-  };
 
   const calculateBill = (items: RxItem[]) => {
     return items.reduce((acc, item) => {

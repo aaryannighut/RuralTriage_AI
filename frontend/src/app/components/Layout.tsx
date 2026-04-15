@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import SwasthyaAuth from "./SwasthyaAuth";
 import UserProfile from "./UserProfile";
 import { useAuth } from "../context/AuthContext";
+import Footer from "./Footer";
 
 export function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -65,7 +66,7 @@ export function Layout() {
       {/* Mobile Top Bar */}
       <div className="lg:hidden flex items-center justify-between p-3 border-b border-slate-300 bg-white z-50 sticky top-0">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
+          <img src="/logo.png" alt="Logo" className="h-14 w-auto" />
           <span className="text-xl font-bold text-slate-900 tracking-tight">RuralTriage AI</span>
         </Link>
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 border border-slate-300 rounded-sm">
@@ -76,7 +77,7 @@ export function Layout() {
       {/* Sidebar Navigation */}
       <aside className={`${mobileMenuOpen ? "block" : "hidden"} lg:flex flex-col w-full lg:w-64 border-r border-slate-300 bg-white h-screen sticky top-0 z-40 overflow-y-auto`}> 
         <div className="hidden lg:flex items-center gap-2 px-6 py-4 border-b border-slate-300">
-          <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
+          <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
           <span className="text-xl font-bold text-slate-900 tracking-tight leading-none">RuralTriage AI</span>
         </div>
 
@@ -135,12 +136,15 @@ export function Layout() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 bg-white min-h-screen pb-16">
-        <div className="max-w-6xl mx-auto p-4 md:p-8 lg:p-12">
-          <Outlet />
-        </div>
-      </main>
+      {/* Main Content Area Container */}
+      <div className="flex-1 flex flex-col min-h-screen bg-white">
+        <main className="flex-1">
+          <div className="max-w-6xl mx-auto p-4 md:p-8 lg:p-12">
+            <Outlet />
+          </div>
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 }

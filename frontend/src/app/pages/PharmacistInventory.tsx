@@ -138,8 +138,11 @@ export function PharmacistInventory() {
            stock: inv.quantity,
            price: inv.price,
            expiry: inv.expiry_date,
-           brand: "Verified", // Fallback
-           category: "Other" // Fallback
+           brand: inv.brand || "Generics",
+           category: inv.category || "Other",
+           dose: inv.dose || "N/A",
+           form: inv.form || "Tablet",
+           manufacturer: inv.manufacturer || "N/A"
         })));
       }
       if (rxRes.ok) setRxList(await rxRes.json());
