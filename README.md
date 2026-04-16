@@ -30,15 +30,6 @@ In many rural regions, patients either ignore critical symptoms due to travel co
 | **📦 Pharmacy Hub** | Local medicine availability & search. | — | Full inventory control & stock management. |
 | **🚨 Priority Care** | Fast-track triage for critical indicators. | Emergency alerts for high-risk triage cases. | — |
 
----
-
-## 👥 The Development Team
-
-This project was envisioned and developed by a dedicated team of innovators focused on making an impact in healthcare accessibility:
-
-*   **Aaryan Nighut** — Lead Architect & Backend Engineering
-*   **Ekanksh Mohite** — Full Stack Development & UI/UX Specialist
-*   **Aarya Nighut** — Frontend Strategy & Clinical Workflow Logic
 
 ---
 
@@ -157,6 +148,16 @@ To enable the full power of RuralTriage AI, you need the following keys in your 
 2.  **Clinical Phase**: High-risk patients are pushed to the top of the **Doctor's Master Queue**.
 3.  **Tele-Consultation**: Secure video/audio link established via the dashboard.
 4.  **Resolution**: Doctor issues an **E-Prescription** which is instantly visible to the patient and their local **Pharmacy Registry**.
+
+---
+
+## 👥 The Development Team
+
+This project was envisioned and developed by a dedicated team of innovators focused on making an impact in healthcare accessibility:
+
+*   **Aaryan Nighut** — Lead Architect & Backend Engineering
+*   **Ekanksh Mohite** — Full Stack Development & UI/UX Specialist
+*   **Aarya Nighut** — Frontend Strategy & Clinical Workflow Logic
 
 ---
 
