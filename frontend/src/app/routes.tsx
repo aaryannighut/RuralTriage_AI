@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { Layout } from "./components/Layout";
 import { Home } from "./pages/Home";
 import { TalkToDoctor } from "./pages/TalkToDoctor";
@@ -35,6 +35,10 @@ export const router = createBrowserRouter([
       { path: "privacy", Component: Privacy },
       { path: "dashboard", Component: HealthDashboard },
       { path: "dashboard/doctor", Component: DoctorDashboard },
+      { 
+        path: "dashboard/pharmacist", 
+        Component: () => <Navigate to="/dashboard/pharmacist/dispensary" replace /> 
+      },
       { path: "dashboard/pharmacist/dispensary", Component: PharmacistDispensary },
       { path: "dashboard/pharmacist/inventory", Component: PharmacistInventory },
       { path: "pharma", Component: PharmaAdmin },
