@@ -6,10 +6,17 @@
   <img src="frontend/public/logo.png" width="120" height="120" alt="RuralTriage AI Logo">
 </p>
 
-[![Tech Stack: FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Tech Stack: React](https://img.shields.io/badge/Frontend-React-61DAFB.svg?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
-[![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg?style=flat-square)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](#)
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/FastAPI-005863?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white" alt="Tailwind">
+  <img src="https://img.shields.io/badge/SQLite-07405E?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite">
+  <img src="https://img.shields.io/badge/Groq-AI-orange?style=flat-square" alt="Groq">
+  <img src="https://img.shields.io/badge/Status-Active-brightgreen.svg?style=flat-square" alt="Status">
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="License">
+</p>
 
 ---
 
