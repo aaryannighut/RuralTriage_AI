@@ -33,33 +33,32 @@ In many rural regions, patients either ignore critical symptoms due to travel co
 
 ---
 
-## 🏗️ Detailed Project Architecture
+## 📂 Project Structure
 
-The system is split into two main high-performance modules, meticulously organized for scalability and maintainability.
-
-### 📂 Backend Architecture (`/backend`)
-Built with **FastAPI**, focusing on asynchronous performance and strict data validation.
-
-*   `app/main.py`: The central nervous system of the API. Manages middleware, exception handlers, and route registration.
-*   `app/models.py`: Defines the **SQLAlchemy** schemas for Patients, Doctors, Appointments, and Prescriptions.
-*   `app/database.py`: Orchestrates the database connection pooling and session management.
-*   `app/routes/`: 
-    *   `doctor_dashboard_routes.py`: Specialized endpoints for clinical stats, high-risk patient flags, and queue management.
-    *   `patient_routes.py`: Handles profile creation, symptom logging, and family doctor enrollment.
-    *   `appointment_routes.py`: Manages the lifecycle of a consultation (Scheduled → Completed → Cancelled).
-*   `app/schemas/`: Contains **Pydantic** models that ensure every piece of data entering the system is valid and secure.
-*   `app/settings.py`: Environment-aware configuration for API Keys and Server Settings.
-
-### 📂 Frontend Architecture (`/frontend`)
-A modern **React** SPA designed for speed and responsiveness in low-bandwidth environments.
-
-*   `src/app/pages/`:
-    *   `TalkToDoctor.tsx`: The core tele-consultation hub featuring real-time appointment tracking and the family doctor interface.
-    *   `DoctorDashboard.tsx`: A comprehensive workspace for practitioners to manage their clinical queue and issue AI-assisted reports.
-    *   `SymptomTriage.tsx`: The primary interface for the AI diagnostic engine.
-    *   `HealthRecords.tsx`: A secure portal for uploading and interpreting medical documents.
-*   `src/app/components/`: Reusable, atomic UI components (Stats Cards, Navbars, Badge systems).
-*   `src/styles/`: Global **Tailwind CSS** configurations and design system tokens.
+```text
+RuralTriage_AI/
+├── backend/                # FastAPI Backend
+│   ├── app/
+│   │   ├── main.py         # Main entry point & API routes
+│   │   ├── models.py       # SQLAlchemy Database Models
+│   │   ├── database.py     # DB connection & session management
+│   │   ├── routes/         # Feature-specific API routes (Doctor, Patient, Triage)
+│   │   ├── schemas/        # Pydantic data validation models
+│   │   └── services/       # Core logic (AI Integrations, ML Inference)
+│   ├── requirements.txt    # Python dependencies
+│   └── .env                # System configuration (API Keys)
+├── frontend/               # React Vite Frontend
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── components/ # Reusable UI components
+│   │   │   └── pages/      # Main workflow pages (Consultation, Dashboard)
+│   │   ├── styles/         # Global CSS & Tailwind configuration
+│   │   └── main.tsx        # React entry point
+│   ├── public/             # Assets (Logo, Icons, Banners)
+│   └── package.json        # Frontend dependencies
+├── README.md               # You are here 📍
+└── test.db                 # Local development database (SQLite)
+```
 
 ---
 
