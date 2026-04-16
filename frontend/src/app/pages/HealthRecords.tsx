@@ -127,6 +127,8 @@ export function HealthRecords() {
   };
 
   const handleDeleteRecord = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this record? This action cannot be undone.")) return;
+    
     setRecordSaving(true); setRecordError(""); setRecordSuccess("");
     try {
       await saveRecordsToBackend(records.filter((r) => r.id !== id));

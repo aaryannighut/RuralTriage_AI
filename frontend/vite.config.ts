@@ -28,6 +28,10 @@ export default defineConfig({
         ws: true,
         changeOrigin: true,
       },
+      '/static': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       ...['/offer', '/health', '/auth', '/doctors', '/patients', '/health-records', '/pharmacies', '/appointments', '/pharmacists', '/medicines', '/doctor'].reduce((acc, path) => ({
         ...acc,
         [path]: {
