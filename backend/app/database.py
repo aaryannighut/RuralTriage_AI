@@ -1,17 +1,17 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+import os
 
-# Fetch DATABASE_URL from environment variables (MANDATORY for Railway)
+# Fetch DATABASE_URL from environment variables
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Fix for Railway/Heroku: Replace 'postgres://' with 'postgresql://' as required by SQLAlchemy 1.4+
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-# Ensure fallback for local development if needed, but production MUST use DATABASE_URL
+# Production safety: Fail early if DATABASE_URL is missing
 if not DATABASE_URL:
-    DATABASE_URL = "sqlite:///./local.db" 
+    raise ValueError("DATABASE_URL is missing. Please set the DATABASE_URL environment variable.")
+
+# Railway/Heroku fix: replace postgres:// with postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 engine = create_engine(
     DATABASE_URL,

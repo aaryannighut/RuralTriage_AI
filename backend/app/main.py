@@ -48,29 +48,18 @@ dcs: set = set()
 chat_rooms: dict[str, list[WebSocket]] = {}
 rooms: dict[str, list[WebSocket]] = {}
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Lifecycle manager for startup and shutdown tasks"""
-    print("🚀 Starting RuralTriage AI Backend...")
+@app.on_event("startup")
+def startup():
+    """Ensure database initializes safely on startup"""
     try:
-        # Create tables for any models that don't exist yet
         Base.metadata.create_all(bind=engine)
-        print("✅ Database tables verified.")
+        print("✅ Database connected and tables verified.")
     except Exception as e:
-        print(f"❌ Database initialization failed: {e}")
-    
-    yield
-    
-    print("🛑 Shutting down RuralTriage AI Backend...")
-    # Clean up peer connections if any
-    for pc in list(pcs):
-        await pc.close()
-    pcs.clear()
+        print(f"❌ Database error: {e}")
 
 app = FastAPI(
     title="RuralTriage AI API",
-    version="1.0.0",
-    lifespan=lifespan
+    version="1.0.0"
 )
 
 # --- MIDDLEWARE ---
