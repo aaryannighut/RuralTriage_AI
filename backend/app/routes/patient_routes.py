@@ -159,7 +159,7 @@ class FamilyDoctorIn(BaseModel):
     patient_id: int
     doctor_id: int
 
-@router.post("/family-doctor")
+@router.post("/set-family-doctor")
 def set_family_doctor(data: FamilyDoctorIn, db: Session = Depends(get_db)):
     patient = db.query(Patient).filter(Patient.id == data.patient_id).first()
     if not patient:
@@ -169,6 +169,50 @@ def set_family_doctor(data: FamilyDoctorIn, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(patient)
     return {"message": "Family doctor updated successfully", "family_doctor_id": patient.family_doctor_id}
+
+@router.get("/{patient_id}/family-doctor")
+def get_family_doctor(patient_id: int, db: Session = Depends(get_db)):
+    from app.models import Doctor
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    if not patient.family_doctor_id:
+        return {"doctor": None}
+        
+    doctor = db.query(Doctor).filter(Doctor.id == patient.family_doctor_id).first()
+    if not doctor:
+        return {"doctor": None}
+        
+    # Manual serialization to avoid circular dependencies and ensure clean JSON
+    doc_dict = {
+        "id": doctor.id,
+        "name": doctor.name,
+        "qualification": doctor.qualification,
+        "specialty": doctor.specialty,
+        "experience": doctor.experience,
+        "fee": float(doctor.fee) if doctor.fee else 0.0,
+        "hospital": doctor.hospital,
+        "city": doctor.city,
+        "state": doctor.state,
+        "availability": doctor.availability,
+        "verified": doctor.verified
+    }
+    return {"doctor": doc_dict}
+
+@router.put("/change-family-doctor")
+def change_family_doctor(data: FamilyDoctorIn, db: Session = Depends(get_db)):
+    return set_family_doctor(data, db)
+
+@router.delete("/remove-family-doctor/{patient_id}")
+def remove_family_doctor(patient_id: int, db: Session = Depends(get_db)):
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    patient.family_doctor_id = None
+    db.commit()
+    return {"message": "Family doctor removed successfully"}
 
 
 # ── Prescriptions ──────────────────────────────────────────────────────────────
@@ -227,6 +271,7 @@ class PatientIn(BaseModel):
     health_metrics: Optional[dict[str, Any]] = {}
     health_records: Optional[list[Any]] = []
     prescriptions: Optional[list[Any]] = []
+    family_doctor_id: Optional[int] = None
 
 
 class PatientOut(PatientIn):

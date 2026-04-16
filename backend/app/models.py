@@ -41,8 +41,8 @@ class Doctor(Base):
     verified      = Column(Boolean, default=False)
     certificate   = Column(String, nullable=True)         # filename or URL
     time_slots    = Column(JSON, default=list)
-    appointments  = Column(JSON, default=list)          # Available time slots per day
-            # Booked appointments
+    appointments  = Column(JSON, default=list)          # Booked appointments
+    notifications = Column(JSON, default=list)          # Assignment notifications
 
 
 # -------------------------

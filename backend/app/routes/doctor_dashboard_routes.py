@@ -510,3 +510,31 @@ def get_doctor_prescriptions(user_id: int = Query(...), db: Session = Depends(ge
     # Newest first
     result.sort(key=lambda x: x.get("issued_at", ""), reverse=True)
     return result
+
+# ── 10. Notifications ──────────────────────────────────────────────────────────
+
+class NotificationIn(BaseModel):
+    doctor_id: int
+    message: str
+
+@router.post("/notification")
+def send_notification(data: NotificationIn, db: Session = Depends(get_db)):
+    doctor = db.query(Doctor).filter(Doctor.id == data.doctor_id).first()
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    notifications = list(doctor.notifications or [])
+    notifications.append({
+        "id": str(uuid.uuid4()),
+        "message": data.message,
+        "timestamp": datetime.utcnow().isoformat(),
+        "read": False
+    })
+    doctor.notifications = notifications
+    db.commit()
+    return {"message": "Notification sent"}
+
+@router.get("/notifications")
+def get_notifications(user_id: int = Query(...), db: Session = Depends(get_db)):
+    doctor = _get_doctor_or_404(user_id, db)
+    return doctor.notifications or []

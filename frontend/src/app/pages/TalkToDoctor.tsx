@@ -27,6 +27,32 @@ interface LogEntry {
     type: "info" | "error" | "success";
 }
 
+type Specialty =
+  | "General Physician" | "Cardiologist" | "Neurologist" | "Dermatologist"
+  | "Pediatrician" | "Orthopedist" | "Gynecologist" | "Ophthalmologist"
+  | "ENT Specialist" | "Psychiatrist" | "Diabetologist" | "Oncologist" | "Other";
+
+type Availability = "Available" | "Busy" | "On Leave";
+type ConsultMode = "Video" | "In-Person" | "Both";
+
+interface Doctor {
+  id: number;
+  name: string;
+  specialty: Specialty;
+  qualification: string;
+  experience: number;
+  fee: number;
+  hospital: string;
+  city: string;
+  state: string;
+  phone: string;
+  email: string;
+  availability: Availability;
+  consultMode: ConsultMode;
+  verified: boolean;
+  certificate: string | null;
+}
+
 function VideoCallRoom({
   roomId,
   doctorName,
@@ -378,7 +404,19 @@ export function TalkToDoctor() {
       if (res.ok) {
         const data = await res.json();
         setPatientId(data.id);
-        setFamilyDocId(data.family_doctor_id);
+        
+        // Fetch full doctor details if family_doctor_id exists
+        if (data.family_doctor_id) {
+            const docRes = await fetch(`/patients/${data.id}/family-doctor`);
+            if (docRes.ok) {
+                const docData = await docRes.json();
+                setFamilyDoctor(docData.doctor);
+                setFamilyDocId(data.family_doctor_id);
+            }
+        } else {
+            setFamilyDoctor(null);
+            setFamilyDocId(null);
+        }
       }
     } catch (err) {
       console.error("Profile Fetch Error:", err);
@@ -417,28 +455,22 @@ export function TalkToDoctor() {
       })
       .then((data) => {
          setDoctors(data);
-         // If a family doctor ID exists, find it in the list or fetch separately
-         if (familyDocId) {
-           const found = data.find(d => d.id === familyDocId);
-           if (found) setFamilyDoctor(found);
-           else {
-             fetch(`/doctors/`) // Fallback to ensure we have details if not in search view
-               .then(r => r.json())
-               .then(all => setFamilyDoctor(all.find((d:any) => d.id === familyDocId)));
-           }
-         }
       })
       .catch((err) => setFetchError(err.message ?? "Failed to load doctors"))
       .finally(() => setLoadingDocs(false));
-  }, [searchQuery, familyDocId]);
+  }, [searchQuery]);
 
-  const openBooking = async () => {
-    if (!selectedDoctor) return;
+  const openBooking = async (docOverride?: Doctor) => {
+    const doc = docOverride || selectedDoctor;
+    if (!doc) return;
+    
+    if (docOverride) setSelectedDoctor(docOverride);
+    
     setShowBooking(true);
     setLoadingSlots(true);
     setBookingError("");
     try {
-      const res = await fetch(`/doctors/${selectedDoctor.id}/available-slots`);
+      const res = await fetch(`/doctors/${doc.id}/available-slots`);
       if (!res.ok) throw new Error("Failed to load available slots");
       const data = await res.json();
       setAvailableSlots(data.slots || []);
@@ -519,18 +551,13 @@ export function TalkToDoctor() {
     let currentPatientId = patientId;
     const activeUserId = user?.userId || (user as any)?.id;
     
-    console.log(`Registry Handshake: Initiating selection commit for Dr. ID ${docId}. UID found: ${activeUserId}`);
-
-    // If patientId is missing, attempt to re-sync profile
     if (!currentPatientId && activeUserId) {
-      console.log("Registry Sync: Patient identity missing. Re-synchronizing...");
       try {
         const res = await fetch(`/patients/user/${activeUserId}`);
         if (res.ok) {
           const data = await res.json();
           currentPatientId = data.id;
           setPatientId(data.id);
-          console.log(`Registry Sync: Identity established. PID: ${currentPatientId}`);
         }
       } catch (err) {
         console.error("Registry Sync Failure:", err);
@@ -538,31 +565,67 @@ export function TalkToDoctor() {
     }
 
     if (!currentPatientId) {
-      alert("CRITICAL ERROR: Patient synchronization failed. Please refresh the registry or re-login.");
+      alert("CRITICAL ERROR: Patient synchronization failed.");
       return;
     }
 
     try {
-      const res = await fetch(`/patients/family-doctor`, {
-        method: "POST",
+      const isUpdate = !!familyDocId;
+      const apiPath = isUpdate ? "/patients/change-family-doctor" : "/patients/set-family-doctor";
+      const method = isUpdate ? "PUT" : "POST";
+
+      const res = await fetch(apiPath, {
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ patient_id: currentPatientId, doctor_id: docId }),
       });
       
       if (res.ok) {
         setFamilyDocId(docId);
-        // Instant sync of the family doctor object
         const found = doctors.find(d => d.id === docId);
         if (found) setFamilyDoctor(found);
+        else {
+           // Fetch full doctor details if not in list
+           const dRes = await fetch(`/doctors/${docId}`);
+           if (dRes.ok) setFamilyDoctor(await dRes.json());
+        }
         
-        alert("FAMILY DOCTOR LOCKED: Profile updated successfully.");
+        // Notify the doctor
+        await fetch("/doctor/notification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            doctor_id: docId, 
+            message: `New patient assigned: ${user.name}` 
+          }),
+        });
+
+        alert("FAMILY DOCTOR ASSIGNED: Profile updated successfully.");
       } else {
         const errData = await res.json();
         alert(`Registry Update Failed: ${errData.detail || "Unknown error"}`);
       }
     } catch (err) {
       console.error("Transmutation Failure:", err);
-      alert("Network Error: Failed to commit selection to master record.");
+      alert("Network Error: Failed to commit selection.");
+    }
+  };
+
+  const handleRemoveFamilyDoctor = async () => {
+    if (!patientId) return;
+    if (!window.confirm("Are you sure you want to remove your family doctor?")) return;
+
+    try {
+      const res = await fetch(`/patients/remove-family-doctor/${patientId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setFamilyDocId(null);
+        setFamilyDoctor(null);
+        alert("Family doctor removed.");
+      }
+    } catch (err) {
+      console.error("Removal Failure:", err);
     }
   };
   if (!user.userId) return (
@@ -675,24 +738,30 @@ export function TalkToDoctor() {
               <p className="text-xs text-slate-500 mt-1 uppercase font-bold tracking-tighter">Certified Regional Health Guardian</p>
             </div>
             <div className="flex gap-3">
-               <button 
-                 onClick={() => { setSelectedDoctor(familyDoctor); setConsultationType("video"); openBooking(); }}
-                 className="px-8 py-3 bg-[#0056b3] text-white text-xs font-black uppercase tracking-widest hover:bg-blue-900 transition-none shadow-md"
-               >
-                 Consult Now
-               </button>
-               <button 
-                 onClick={() => setFamilyDocId(null)}
-                 className="px-6 py-3 border-2 border-slate-300 bg-white text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-none"
-               >
-                 Change Doctor
-               </button>
+                <button 
+                  onClick={() => { setConsultationType("video"); openBooking(familyDoctor); }}
+                  className="px-8 py-3 bg-[#0056b3] text-white text-xs font-black uppercase tracking-widest hover:bg-blue-900 transition-none shadow-md"
+                >
+                  Consult Now
+                </button>
+                <button 
+                  onClick={() => { document.getElementById('doctor-registry')?.scrollIntoView({ behavior: 'smooth' }); }}
+                  className="px-6 py-3 border-2 border-slate-300 bg-white text-slate-700 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-none"
+                >
+                  Change Doctor
+                </button>
+                <button 
+                  onClick={handleRemoveFamilyDoctor}
+                  className="px-6 py-3 border-2 border-red-300 bg-white text-red-700 text-xs font-black uppercase tracking-widest hover:bg-red-50 transition-none"
+                >
+                  Remove Doctor
+                </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="border border-slate-300 bg-white">
+      <div id="doctor-registry" className="border border-slate-300 bg-white">
         <div className="p-6 md:p-8 border-b border-slate-300 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-tight">Tele-Consultation Registry</h1>

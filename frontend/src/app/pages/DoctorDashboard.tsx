@@ -392,6 +392,7 @@ export function DoctorDashboard() {
   const [rxAINote,      setRxAINote]      = useState("");
   const [stats,         setStats]         = useState<DashboardStats | null>(null);
   const [prescriptions, setPrescriptions] = useState<IssuedPrescription[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   const [openSection, setOpenSection] = useState<string>("dashboard");
   const location = useLocation();
@@ -412,13 +413,14 @@ export function DoctorDashboard() {
   const reload = useCallback(async () => {
     if (!user.userId) return;
     try {
-      const [profRes, queueRes, schedRes, riskRes, statsRes, rxRes] = await Promise.all([
+      const [profRes, queueRes, schedRes, riskRes, statsRes, rxRes, notifyRes] = await Promise.all([
         fetch(`/doctors/user/${user.userId}`),
         fetch(`/doctor/patients/queue?user_id=${user.userId}`),
         fetch(`/doctor/appointments?user_id=${user.userId}`),
         fetch(`/doctor/high-risk-patients?user_id=${user.userId}`),
         fetch(`/doctor/dashboard/stats?user_id=${user.userId}`),
         fetch(`/doctor/prescriptions?user_id=${user.userId}`),
+        fetch(`/doctor/notifications?user_id=${user.userId}`),
       ]);
 
       if (!profRes.ok) throw new Error("Practitioner registry not found.");
@@ -431,6 +433,7 @@ export function DoctorDashboard() {
       if (riskRes.ok)   setHighRisk(await riskRes.json());
       if (statsRes.ok)  setStats(await statsRes.json());
       if (rxRes.ok)     setPrescriptions(await rxRes.json());
+      if (notifyRes.ok) setNotifications(await notifyRes.json());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registry synchronization failure.");
     } finally { setLoading(false); }
@@ -565,6 +568,31 @@ export function DoctorDashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── NOTIFICATIONS ── */}
+      {notifications.length > 0 && (
+        <div className="border border-blue-200 bg-blue-50/50 p-4">
+          <div className="flex items-start gap-4">
+            <AlertCircle className="w-5 h-5 text-[#0056b3] shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-black uppercase text-[#0056b3] text-sm">Clinical Notifications</p>
+              <div className="mt-3 space-y-2">
+                {notifications.slice().sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 5).map(n => (
+                  <div key={n.id} className="bg-white border border-blue-100 p-3 flex items-center justify-between gap-4 shadow-sm hover:border-blue-300 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        <div>
+                            <p className="text-xs font-bold text-slate-800 uppercase tracking-tight">{n.message}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{new Date(n.timestamp).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}</p>
+                        </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── EMERGENCY ALERTS ── */}
       {highRisk.length > 0 && (
