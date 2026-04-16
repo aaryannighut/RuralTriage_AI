@@ -19,19 +19,6 @@ In many rural regions, patients either ignore critical symptoms due to travel co
 
 ---
 
-## ✨ Multi-Persona Core Features
-
-| Feature | For Patients | For Doctors | For Pharmacists |
-| :--- | :--- | :--- | :--- |
-| **🩺 AI Triage** | Instant symptom checker & risk categorization. | High-priority patient flags & diagnostic assist. | — |
-| **👨‍⚕️ Tele-Consult** | Bookings & secure WebRTC video/audio calls. | Queue management & clinical record access. | — |
-| **💊 Prescriptions** | Digital access to medication & AI notes. | Real-time generation & dispatch to registry. | Order tracking & dispensary workflow. |
-| **📁 Health Records** | Personal medical cloud & AI report parsing. | Archive review & laboratory history analysis. | — |
-| **📦 Pharmacy Hub** | Local medicine availability & search. | — | Full inventory control & stock management. |
-| **🚨 Priority Care** | Fast-track triage for critical indicators. | Emergency alerts for high-risk triage cases. | — |
-
----
-
 ## 👥 The Development Team
 
 This project was envisioned and developed by a dedicated team of innovators focused on making an impact in healthcare accessibility:
@@ -160,6 +147,4 @@ To enable the full power of RuralTriage AI, you need the following keys in your 
 
 ---
 
-<p align="center">
-  <h3>🌟 <i>Bridging the distance between patients and specialists with intelligence.</i> 🏥</h3>
-</p>
+### *Bridging the distance between patients and specialists with intelligence.*
