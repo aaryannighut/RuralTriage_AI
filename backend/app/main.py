@@ -4,7 +4,7 @@ import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-#from aiortc import RTCPeerConnection, RTCSessionDescription
+# from aiortc import RTCPeerConnection, RTCSessionDescription
 # from aiortc.contrib.media import MediaBlackhole, MediaRelay
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app import exception_handler
-from app.my_media_transform_check import AudioTransformTrack, VideoTransformTrack
+# from app.my_media_transform_check import AudioTransformTrack, VideoTransformTrack
 from app.settings import Settings
 from app.database import Base, engine
 from app.routes.auth_routes import router as auth_router
@@ -48,11 +48,11 @@ rooms: dict[str, list[WebSocket]] = {}
 async def lifespan(app: FastAPI):
     # Create tables for any models that don't exist yet
     Base.metadata.create_all(bind=engine)
-    yield
+    # yield
     # Shutdown: close all peer connections
-    coros = [pc.close() for pc in pcs]
-    await asyncio.gather(*coros)
-    pcs.clear()
+    # coros = [pc.close() for pc in pcs]
+    # await asyncio.gather(*coros)
+    # pcs.clear()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -101,68 +101,68 @@ def health() -> JSONResponse:
     return JSONResponse({"message": "It worked!!"})
 
 
-@app.post("/offer", include_in_schema=False)
-async def offer(request: Request):
-    params = await request.json()
-    offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
+# @app.post("/offer", include_in_schema=False)
+# async def offer(request: Request):
+#     params = await request.json()
+#     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
-    # pc = RTCPeerConnection()
-    pc_id = "PeerConnection(%s)" % uuid.uuid4()
-    pcs.add(pc)
+#     # pc = RTCPeerConnection()
+#     pc_id = "PeerConnection(%s)" % uuid.uuid4()
+#     pcs.add(pc)
 
-    def log_info(msg, *args):
-        root_logger.info(pc_id + " " + msg, *args)
+#     def log_info(msg, *args):
+#         root_logger.info(pc_id + " " + msg, *args)
 
-    # player = MediaPlayer("/usr/src/app/app/demo-instruct.wav")
-    recorder = MediaBlackhole()
+#     # player = MediaPlayer("/usr/src/app/app/demo-instruct.wav")
+#     recorder = MediaBlackhole()
 
-    @pc.on("datachannel")
-    def on_datachannel(channel):
-        dcs.add(channel)
+#     @pc.on("datachannel")
+#     def on_datachannel(channel):
+#         dcs.add(channel)
 
-        @channel.on("message")
-        def on_message(message):
-            if isinstance(message, str) and message.startswith("ping"):
-                channel.send("pong" + message[4:])
+#         @channel.on("message")
+#         def on_message(message):
+#             if isinstance(message, str) and message.startswith("ping"):
+#                 channel.send("pong" + message[4:])
 
-    @pc.on("connectionstatechange")
-    async def on_connectionstatechange():
-        log_info("Connection state is %s", pc.connectionState)
-        if pc.connectionState == "failed":
-            await pc.close()
-            pcs.discard(pc)
+#     @pc.on("connectionstatechange")
+#     async def on_connectionstatechange():
+#         log_info("Connection state is %s", pc.connectionState)
+#         if pc.connectionState == "failed":
+#             await pc.close()
+#             pcs.discard(pc)
 
-    @pc.on("track")
-    def on_track(track):
-        log_info("Track {} received".format(track.kind))
+#     @pc.on("track")
+#     def on_track(track):
+#         log_info("Track {} received".format(track.kind))
 
-        if track.kind == "audio":
-            pc.addTrack(AudioTransformTrack(relay.subscribe(track)))
-            # recorder.addTrack(track)
-            # recorder.addTrack(player.audio)
-            pass
-        elif track.kind == "video":
-            # pc.addTrack(relay.subscribe(track))
-            pc.addTrack(VideoTransformTrack(relay.subscribe(track), transform=""))
-            # recorder.addTrack(relay.subscribe(track))
-            pass
+#         if track.kind == "audio":
+#             pc.addTrack(AudioTransformTrack(relay.subscribe(track)))
+#             # recorder.addTrack(track)
+#             # recorder.addTrack(player.audio)
+#             pass
+#         elif track.kind == "video":
+#             # pc.addTrack(relay.subscribe(track))
+#             pc.addTrack(VideoTransformTrack(relay.subscribe(track), transform=""))
+#             # recorder.addTrack(relay.subscribe(track))
+#             pass
 
-        @track.on("ended")
-        async def on_ended():
-            log_info("Track %s ended", track.kind)
-            await recorder.stop()
+#         @track.on("ended")
+#         async def on_ended():
+#             log_info("Track %s ended", track.kind)
+#             await recorder.stop()
 
-    # handle offer
-    await pc.setRemoteDescription(offer)
-    await recorder.start()
+#     # handle offer
+#     await pc.setRemoteDescription(offer)
+#     await recorder.start()
 
-    # send answer
-    answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
+#     # send answer
+#     answer = await pc.createAnswer()
+#     await pc.setLocalDescription(answer)
 
-    return JSONResponse(
-        {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type},
-    )
+#     return JSONResponse(
+#         {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type},
+#     )
 
 
 @app.post("/message", include_in_schema=False)
