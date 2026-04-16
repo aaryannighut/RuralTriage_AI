@@ -1,154 +1,169 @@
-# 🏥 RuralTriage AI — Telemedicine for Rural India
+# 🏥 RuralTriage AI
 
-> A full-stack telemedical platform bridging the healthcare gap in rural India through AI-powered diagnostics, video consultations, and digital pharmacy access.
+### "AI-Powered Rural Healthcare Triage & Telemedicine Platform"
 
-![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)
-![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688?logo=fastapi)
-![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?logo=postgresql)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.x-06B6D4?logo=tailwindcss)
+![RuralTriage AI Logo](frontend/public/logo.png)
 
----
-
-## 📖 About the Project
-
-Healthcare access in rural India is severely limited due to a lack of doctors, diagnostic centers, and accessible pharmacies. **RuralTriage AI** is designed to bridge this gap by bringing essential healthcare services directly to a patient's fingertips through an easy-to-use digital platform.
-
-The system serves three primary users:
-1. **Patients:** Can check their symptoms using AI, consult with verified doctors via video calls, digitize and analyze their medical reports, and locate life-saving medicines at nearby pharmacies.
-2. **Doctors:** Gain access to rural patients through a streamlined portal where they can manage their schedule and conduct seamless video/audio consultations.
-3. **Pharmacists (Medical Shops):** Can digitize their inventory, making it easy for patients within the locality to check medicine availability in real-time.
-
-By combining real-time communication (WebRTC) and advanced Artificial Intelligence (Groq LLM/Vision), RuralTriage AI mimics the full life-cycle of a clinic visit—all from a mobile-friendly web interface.
+[![Tech Stack: FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Tech Stack: React](https://img.shields.io/badge/Frontend-React-61DAFB.svg?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
+[![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg?style=flat-square)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](#)
 
 ---
 
-## ✨ Features
+## 📖 Project Overview
 
-| Feature | Description |
-|---|---|
-| 🩺 **AI Symptom Checker** | Log symptoms and get AI-powered health insights using Groq LLM |
-| 👨‍⚕️ **Talk to Doctor** | Book appointments and consult via real-time **WebRTC video/audio calls** |
-| 💊 **Find Medicines** | Search medicines and check availability at nearby pharmacies |
-| 📁 **Health Records** | Upload medical files to cloud storage + **AI image diagnosis** for reports |
-| 📊 **Health Dashboard** | Personalized health score, lab reports, and daily health mandates |
-| 🏪 **Pharmacy Admin** | Manage store profile, inventory, and stock levels |
+**RuralTriage AI** is a comprehensive clinical decision support system designed specifically to bridge the healthcare gap in remote and rural areas. In regions where specialist doctors are scarce, our platform empowers local practitioners and patients with state-of-the-art AI diagnostics.
+
+### The Problem
+Rural healthcare often suffers from delayed triage, leading to preventable complications. Patients often travel long distances for minor issues or, conversely, delay seeking care for life-threatening emergencies.
+
+### The Solution
+By integrating **Advanced LLMs (Groq)** and **Vision Analysis**, RuralTriage AI provides immediate, clinical-grade triage decisions—identifying whether a case can be treated locally or requires urgent referral to a higher hospital.
+
+---
+
+## 🚀 Key Features
+
+### 🧠 AI Triage System
+*   **Symptom Analysis**: Natural language processing to understand complex patient complaints.
+*   **Risk Level Detection**: Automated categorization from Low to Critical.
+*   **Final Decision Logic**: Clear instructions (Treat Locally, Monitor, or Refer) with AI-backed reasoning.
+
+### 🚨 Emergency Alert System
+*   **Critical Detection**: Automatically flags life-threatening indicators (chest pain, shortness of breath).
+*   **Priority Queue**: Ensures urgent cases are highlighted at the top of the doctor's dashboard.
+
+### 📡 Offline-First & Local Sandbox
+*   **Resilient Design**: Works in low-connectivity areas.
+*   **Sandbox Mode**: Automatically switches to local server storage if cloud services (Cloudinary) are unreachable.
+
+### 👨‍⚕️ Doctor Dashboard
+*   **Patient Registry**: Real-time queue and medical history.
+*   **Digital Prescriptions**: Instant generation and dispatch of e-prescriptions.
+*   **Clinical Tools**: Direct access to patient triage data and medical documents.
+
+### 💊 Pharmacy System
+*   **Inventory Control**: Full tracking of medicine stock, categories, and manufacturers.
+*   **Dispensary Workflow**: One-click processing of incoming digital prescriptions.
+
+### 📁 Health Records
+*   **Centralized Repository**: Securely upload and manage X-Rays, Lab Reports, and history.
+*   **AI Interpretation**: Explains complex medical reports in simple, patient-friendly language.
 
 ---
 
 ## 🛠️ Tech Stack
 
-**Backend:** Python · FastAPI · SQLAlchemy · PostgreSQL (Neon) · WebSocket · aiortc (WebRTC)
+### **Frontend**
+- **React 18**: Modern UI logic and component architecture.
+- **TypeScript**: Type-safe development.
+- **Tailwind CSS**: High-performance, responsive styling.
+- **Framer Motion**: Professional, high-fps interface animations.
 
-**Frontend:** React 18 · TypeScript · Vite · TailwindCSS · shadcn/ui · React Router v7
+### **Backend**
+- **FastAPI**: High-performance asynchronous API framework.
+- **SQLAlchemy**: Robust SQL ORM for data persistence.
+- **SQLite / PostgreSQL**: Flexible database support.
 
-**AI & Cloud:** Groq API (LLaMA 3.3 + LLaMA 4 Scout Vision) · Cloudinary CDN
-
----
-
-## 🚀 Quick Start
-
-## 🌍 Deployment URLs
-
-- Live links : https://ruralcare-rust.vercel.app
-
-
-### Prerequisites
-- Python 3.10+ & Pipenv
-- Node.js 18+ & npm
-- PostgreSQL database (or [Neon](https://neon.tech) account)
-- API keys: [Groq](https://console.groq.com), [Cloudinary](https://cloudinary.com)
-
-### Backend Setup
-```bash
-cd backend
-pip install pipenv
-pipenv install
-# Configure backend/app/config/dev.env with your credentials
-pipenv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-# Runs on http://localhost:5173 (proxies API calls to :8000)
-```
+### **AI & Cloud**
+- **Groq API**: High-speed inference for Llama-3 (Symptom analysis).
+- **Cloudinary**: Dedicated cloud storage for medical files and images.
 
 ---
 
-## 📂 Project Structure
+## 🏗️ Project Structure
 
-```
-RuralTriageAI/
-├── backend/
+```text
+RuralTriage_AI/
+├── backend/                # FastAPI Application
 │   ├── app/
-│   │   ├── main.py              # FastAPI entry point + WebSocket endpoints
-│   │   ├── models.py            # SQLAlchemy models (7 tables)
-│   │   ├── database.py          # DB engine & session setup
-│   │   ├── settings.py          # Environment config (Pydantic)
-│   │   ├── routes/              # API route handlers
-│   │   │   ├── auth_routes.py
-│   │   │   ├── doctor_routes.py
-│   │   │   ├── patient_routes.py
-│   │   │   ├── pharmacist_routes.py
-│   │   │   ├── pharmacy_routes.py
-│   │   │   └── health_records_routes.py
-│   │   ├── services/            # Business logic & external API calls
-│   │   └── schemas/             # Pydantic request/response models
-│   ├── Dockerfile
-│   └── docker-compose.yml
+│   │   ├── main.py         # Entry point & app configuration
+│   │   ├── models.py       # SQL Database models
+│   │   ├── routes/         # API endpoint definitions (Auth, Patient, Doctor)
+│   │   ├── services/       # Business logic & AI Integrations 
+│   │   ├── schemas/        # Pydantic data validation models
+│   │   └── config/         # Environment & Settings management
+│   ├── static/             # Local sandbox storage for uploads
+│   └── requirements.txt    # Python dependencies
 │
-├── frontend/
+├── frontend/               # React SPA
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── pages/           # 14 page components
-│   │   │   ├── components/      # Layout, Auth, UI (48 shadcn components)
-│   │   │   ├── context/         # AuthContext (login state)
-│   │   │   └── routes.tsx       # Route definitions
-│   │   └── styles/              # CSS + Tailwind + theme
-│   └── vite.config.ts           # Dev server proxy config
-│
-└── README.md
+│   │   │   ├── components/ # Reusable UI components (Layout, Auth)
+│   │   │   ├── pages/      # Feature-specific pages (Triage, Dashboard)
+│   │   │   └── routes.tsx  # React Router navigation
+│   ├── public/             # Static assets (logo, icons)
+│   └── vite.config.ts      # Build tool & proxy configuration
 ```
-
-
-## 👥 User Roles
-
-| Role | Access |
-|---|---|
-| **Patient** | Symptom checker, doctor consultations, health records, medicine search, dashboard |
-| **Doctor** | Profile management, appointment handling, video consultations |
-| **Pharmacist** | Store profile, inventory management, stock tracking |
 
 ---
 
-## 📡 Key API Endpoints
+## ⚙️ Installation & Setup
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/auth/signup` | POST | User registration |
-| `/auth/login` | POST | User login |
-| `/doctors/` | GET/POST | List/create doctors |
-| `/doctors/{id}/book-appointment` | POST | Book appointment |
-| `/patients/ai/symptom-analysis` | POST | AI symptom analysis |
-| `/medicines/` | GET | Search medicines |
-| `/pharmacies/availability` | GET | Check medicine stock |
-| `/health-records/upload` | POST | Upload medical file |
-| `/health-records/analyze` | POST | AI image diagnosis |
+### **Backend (Terminal 1)**
+1. Navigate to backend: `cd backend`
+2. Install dependencies: `pip install -r requirements.txt`
+3. Launch server: `python -m uvicorn app.main:app --reload`
+   *   **Port**: `http://localhost:8000`
 
+### **Frontend (Terminal 2)**
+1. Navigate to frontend: `cd frontend`
+2. Install dependencies: `npm install`
+3. Launch dev server: `npm run dev`
+   *   **Port**: `http://localhost:5173`
 
+---
+
+## 🔑 Environment Variables
+
+Create a file named `dev.env` in `backend/app/config/` with the following:
+
+*   `GROQ_API_KEY`: Required for AI symptom analysis and triage.
+*   `CLOUDINARY_URL`: Required for cloud storage. (System defaults to local sandbox if missing).
+*   `DATABASE_URL`: Connection string for the database (e.g., `sqlite:///./test.db`).
+
+---
+
+## 📡 System Architecture
+
+1.  **Client-Side**: React SPA handles routing and state.
+2.  **API Gateway**: Vite Proxy handles secure traffic between frontend and backend.
+3.  **Core API**: FastAPI processes requests and manages the SQLite/PostgreSQL database.
+4.  **AI Layer**: Groq API provides real-time clinical inference.
+5.  **Storage Hub**: Intelligent logic chooses between Cloudinary (Online) and Local (Sandbox) for files.
+
+---
+
+## 🔄 Workflow
+
+**Patient** inputs symptoms → **AI Engine** runs diagnosis → **Final Decision** (Treat/Refer)  
+→ **Doctor** reviews triage in dashboard → **Prescription** issued  
+→ **Pharmacy** receives e-prescription → **Medicine** dispensed.
+
+---
+
+## 🧪 How to Use
+
+1.  **Login**: Access as a Patient or Doctor.
+2.  **Triage**: Use "Check Symptoms" to receive an immediate AI assessment.
+3.  **Consult**: If referred, use "Talk to Doctor" to set up a session.
+4.  **Records**: Upload your reports in "Health Records" for AI explanation.
+5.  **Medicine**: Find your prescribed medicines in the integrated pharmacy search.
+
+---
+
+## 📊 Future Improvements
+
+- [ ] **AI-Based Prescriptions**: Automated initial suggestions for common conditions.
+- [ ] **Real-Time SMS Alerts**: Instant notification for emergency referrals.
+- [ ] **Geospatial Tracking**: Automated hospital finding based on GPS location.
 
 ---
 
 ## 📄 License
-
-This project is for educational and demonstration purposes.
+This project is released under the **MIT License**. See `LICENSE` for details.
 
 ---
 
-<p align="center">
-  <b>RuralTriage AI</b> — Healthcare Access for Every Rural Area 🇮🇳
-</p>
+### *Bridging the distance between patients and specialists with intelligence.*
