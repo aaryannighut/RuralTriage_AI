@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { toApiUrl } from "../config/runtime";
 
 export type Language = "en" | "hi" | "mr";
 
@@ -49,7 +50,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setIsTranslating(true);
 
     try {
-      const res = await fetch("/translate", {
+      const res = await fetch(toApiUrl("/translate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, target_lang: targetLang })

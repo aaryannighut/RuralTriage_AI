@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { CheckCircle, Clock, Thermometer, Activity, Trash2, Loader2, Bot, ShieldAlert, Send, Wind, Brain, Battery, Heart, Droplets, Flame, Frown, AlertCircle, AlertTriangle, CircleDot, RefreshCcw } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { toApiUrl } from "../config/runtime";
 
 interface SavedSymptom {
   id?: number;
@@ -83,7 +84,7 @@ export function CheckSymptoms() {
         return;
       }
       try {
-        const res = await fetch(`/patients/user/${activeUserId}`);
+        const res = await fetch(toApiUrl(`/patients/user/${activeUserId}`));
         if (!res.ok) {
           if (res.status === 404) { setPatient(null); setLoading(false); return; }
           throw new Error(t("Failed to load patient data from regional triage central."));
@@ -111,7 +112,7 @@ export function CheckSymptoms() {
     setTriageHistory([]);
 
     try {
-      const res = await fetch("/patients/ai/symptom-analysis", {
+      const res = await fetch(toApiUrl("/patients/ai/symptom-analysis"), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ symptom_names: symptomLabels, duration: dur }),
       });
@@ -157,7 +158,7 @@ export function CheckSymptoms() {
     try {
         const lastAnalysis = [...triageHistory].reverse().find(e => e.role === "bot")?.data as TriageResult;
         
-        const res = await fetch("/patients/triage/followup", {
+        const res = await fetch(toApiUrl("/patients/triage/followup"), {
             method: "POST", 
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
@@ -193,12 +194,12 @@ export function CheckSymptoms() {
       const symptomNames = selectedSymptoms.map((id) => commonSymptoms.find((s) => s.id === id)?.label || id);
       const activeUserId = user?.userId || (user as any)?.id;
       if (patient && patient.id) {
-        const res = await fetch(`/patients/${patient.id}/symptoms/batch`, {
+        const res = await fetch(toApiUrl(`/patients/${patient.id}/symptoms/batch`), {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ symptom_names: symptomNames, duration }),
         });
         if (res.ok) {
-          const refreshRes = await fetch(`/patients/user/${activeUserId}`);
+          const refreshRes = await fetch(toApiUrl(`/patients/user/${activeUserId}`));
           if (refreshRes.ok) setPatient(await refreshRes.json());
           setSuccessMessage(t("SYMPTOMS RECORDED. INITIATING TRIAGE."));
         }
@@ -223,9 +224,9 @@ export function CheckSymptoms() {
       if (symptomId) params.set("symptom_id", String(symptomId));
       else params.set("recorded_at", recordedAt);
       const activeUserId = user?.userId || (user as any)?.id;
-      const res = await fetch(`/patients/${patient.id}/symptoms/${encodeURIComponent(symptomName)}?${params.toString()}`, { method: "DELETE" });
+      const res = await fetch(toApiUrl(`/patients/${patient.id}/symptoms/${encodeURIComponent(symptomName)}?${params.toString()}`), { method: "DELETE" });
       if (!res.ok) throw new Error(t("Failed to purge symptom"));
-      const res2 = await fetch(`/patients/user/${activeUserId}`);
+      const res2 = await fetch(toApiUrl(`/patients/user/${activeUserId}`));
       if (res2.ok) setPatient(await res2.json());
     } catch (err) { setError(err instanceof Error ? err.message : "Error purging record"); }
     finally { setSaving(false); }

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { toApiUrl } from "../config/runtime";
 
 interface RxItem {
   medicine: string;
@@ -120,16 +121,16 @@ export function PharmacistInventory() {
   const fetchData = async () => {
     if (!user.userId) return;
     try {
-      const profRes = await fetch(`/pharmacies/user/${user.userId}`);
+      const profRes = await fetch(toApiUrl(`/pharmacies/user/${user.userId}`));
       if (!profRes.ok) throw new Error(t("Pharmacy profile not found."));
       const profData = await profRes.json();
       setProfile(profData);
 
       const [invRes, rxRes, statsRes, histRes] = await Promise.all([
-        fetch(`/pharmacies/pharmacy/inventory/${profData.id}`),
-        fetch(`/pharmacies/pharmacy/prescriptions/${profData.id}`),
-        fetch(`/pharmacies/pharmacy/dashboard/stats?pharmacy_id=${profData.id}`),
-        fetch(`/pharmacies/pharmacy/transactions/${profData.id}`)
+        fetch(toApiUrl(`/pharmacies/pharmacy/inventory/${profData.id}`)),
+        fetch(toApiUrl(`/pharmacies/pharmacy/prescriptions/${profData.id}`)),
+        fetch(toApiUrl(`/pharmacies/pharmacy/dashboard/stats?pharmacy_id=${profData.id}`)),
+        fetch(toApiUrl(`/pharmacies/pharmacy/transactions/${profData.id}`))
       ]);
 
       if (invRes.ok) {
@@ -175,7 +176,7 @@ export function PharmacistInventory() {
   const handleUpdateStatus = async (rxId: string, status: string) => {
     setProcessingStatus(true);
     try {
-      const res = await fetch(`/pharmacies/pharmacy/prescription/${rxId}`, {
+      const res = await fetch(toApiUrl(`/pharmacies/pharmacy/prescription/${rxId}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
@@ -219,7 +220,7 @@ export function PharmacistInventory() {
         const billedAmt = orderItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
         const itemsPayload = orderItems.filter(i => i.quantity > 0).map(i => ({ medicine_name: i.name, quantity: i.quantity, price: i.price }));
         
-        const res = await fetch(`/pharmacies/pharmacy/prescription/${selectedRx.id}`, {
+        const res = await fetch(toApiUrl(`/pharmacies/pharmacy/prescription/${selectedRx.id}`), {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
@@ -280,7 +281,7 @@ export function PharmacistInventory() {
 
       if (invFormData.id) {
          // Update
-         const res = await fetch(`/pharmacies/pharmacy/inventory/update/${invFormData.id}`, {
+         const res = await fetch(toApiUrl(`/pharmacies/pharmacy/inventory/update/${invFormData.id}`), {
             method: "PUT",
              headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ quantity: q, price: p, expiry_date: invFormData.expiry_date })
@@ -288,7 +289,7 @@ export function PharmacistInventory() {
          if (!res.ok) throw new Error(t("Failed to update inventory."));
       } else {
          // Add
-         const res = await fetch(`/pharmacies/pharmacy/inventory/add`, {
+         const res = await fetch(toApiUrl(`/pharmacies/pharmacy/inventory/add`), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
@@ -318,7 +319,7 @@ export function PharmacistInventory() {
   const handleDeleteInventory = async (invId: number) => {
     if (!confirm(t("Are you sure you want to remove this medication from inventory?"))) return;
     try {
-      const res = await fetch(`/pharmacies/pharmacy/inventory/delete/${invId}`, { method: "DELETE" });
+      const res = await fetch(toApiUrl(`/pharmacies/pharmacy/inventory/delete/${invId}`), { method: "DELETE" });
       if (!res.ok) throw new Error(t("Failed to delete inventory."));
       fetchData();
     } catch(err: any) {

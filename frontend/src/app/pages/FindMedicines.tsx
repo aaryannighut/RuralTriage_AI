@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { Search, MapPin, Phone, Clock, FileText, Loader2, AlertCircle, Building2, ChevronRight, ShieldAlert } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { toApiUrl } from "../config/runtime";
 interface MedicineResponse {
   id: number;
   name: string;
@@ -46,7 +46,7 @@ export function FindMedicines() {
 
       setLoadingPharmacies(true);
       try {
-        const response = await fetch(`/pharmacies/search?medicine=${encodeURIComponent(selectedMedicine.name)}`);
+        const response = await fetch(toApiUrl(`/pharmacies/search?medicine=${encodeURIComponent(selectedMedicine.name)}`));
         
         if (!response.ok) throw new Error("Failed to fetch pharmacy search");
         const data: PharmacySearchResponse[] = await response.json();
@@ -129,7 +129,7 @@ export function FindMedicines() {
      setDisplayPharmacies([]); // Clear pharmacies list
      
      try {
-       const res = await fetch(`/medicines/search?query=${encodeURIComponent(searchQuery)}`, { headers: { "Content-Type": "application/json" } });
+       const res = await fetch(toApiUrl(`/medicines/search?query=${encodeURIComponent(searchQuery)}`), { headers: { "Content-Type": "application/json" } });
        if (res.ok) {
          const data = await res.json();
          setMedicineSuggestions(data);

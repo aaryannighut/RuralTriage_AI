@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { toApiUrl } from "../config/runtime";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface DoctorProfile {
@@ -101,7 +102,7 @@ function PrescriptionModal({ patient, doctorUserId, appointmentId, onSuccess, on
     if (items.some(i => !i.medicine || !i.dosage)) { setError(t("Medicine name + dosage required for every item.")); return; }
     setSaving(true); setError("");
     try {
-      const res = await fetch("/doctor/prescription", {
+      const res = await fetch(toApiUrl("/doctor/prescription"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -216,7 +217,7 @@ function PatientHistoryPanel({ patientId, onClose, onPrescribe }: {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/doctor/patient/${patientId}/history`);
+        const res = await fetch(toApiUrl(`/doctor/patient/${patientId}/history`));
         if (res.ok) setData(await res.json());
       } catch { /* ignore */ }
       finally { setLoading(false); }
@@ -226,7 +227,7 @@ function PatientHistoryPanel({ patientId, onClose, onPrescribe }: {
   const fetchAI = async () => {
     setLoadingAI(true);
     try {
-      const res = await fetch("/doctor/ai/diagnosis-suggestion", {
+      const res = await fetch(toApiUrl("/doctor/ai/diagnosis-suggestion"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ patient_id: patientId, doctor_user_id: user.userId }),
@@ -412,7 +413,7 @@ function ReportGenerationModal({ appointment, doctorUserId, onSuccess, onCancel 
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/doctor/ai/report-suggestions/${appointment.id}`);
+        const res = await fetch(toApiUrl(`/doctor/ai/report-suggestions/${appointment.id}`));
         if (res.ok) {
           const data = await res.json();
           if (data.ai_available) setSuggestions(data.suggestions);
@@ -437,7 +438,7 @@ function ReportGenerationModal({ appointment, doctorUserId, onSuccess, onCancel 
     if (allItems.length === 0) { setError(t("Please select or manually add at least one medication.")); return; }
     setSending(true); setError("");
     try {
-      const res = await fetch("/doctor/prescription", {
+      const res = await fetch(toApiUrl("/doctor/prescription"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -648,14 +649,14 @@ export function DoctorDashboard() {
     }
     try {
       const [profRes, queueRes, schedRes, riskRes, statsRes, rxRes, notifyRes, famRes] = await Promise.all([
-        fetch(`/doctors/user/${user.userId}`),
-        fetch(`/doctor/patients/queue?user_id=${user.userId}`),
-        fetch(`/doctor/appointments?user_id=${user.userId}`),
-        fetch(`/doctor/high-risk-patients?user_id=${user.userId}`),
-        fetch(`/doctor/dashboard/stats?user_id=${user.userId}`),
-        fetch(`/doctor/prescriptions?user_id=${user.userId}`),
-        fetch(`/doctor/notifications?user_id=${user.userId}`),
-        fetch(`/doctor/family-patients?user_id=${user.userId}`),
+        fetch(toApiUrl(`/doctors/user/${user.userId}`)),
+        fetch(toApiUrl(`/doctor/patients/queue?user_id=${user.userId}`)),
+        fetch(toApiUrl(`/doctor/appointments?user_id=${user.userId}`)),
+        fetch(toApiUrl(`/doctor/high-risk-patients?user_id=${user.userId}`)),
+        fetch(toApiUrl(`/doctor/dashboard/stats?user_id=${user.userId}`)),
+        fetch(toApiUrl(`/doctor/prescriptions?user_id=${user.userId}`)),
+        fetch(toApiUrl(`/doctor/notifications?user_id=${user.userId}`)),
+        fetch(toApiUrl(`/doctor/family-patients?user_id=${user.userId}`)),
       ]);
 
       if (!profRes.ok) throw new Error(t("Practitioner registry not found."));
@@ -684,7 +685,7 @@ export function DoctorDashboard() {
     if (!cfg) return;
     setAvailability(status);
     try {
-      await fetch("/doctor/status", {
+      await fetch(toApiUrl("/doctor/status"), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user.userId, status: cfg.api }),
@@ -694,7 +695,7 @@ export function DoctorDashboard() {
 
   // ── Mark Complete ─────────────────────────────────────────────────────────────
   const handleMarkComplete = async (id: number) => {
-    await fetch(`/appointments/complete/${id}`, { method: "PUT" });
+    await fetch(toApiUrl(`/appointments/complete/${id}`), { method: "PUT" });
     reload();
   };
 

@@ -55,7 +55,7 @@ export function PharmaAdmin() {
       if (!user.userId) { setProfileLoading(false); return; }
       setProfileLoading(true);
       try {
-        const res = await fetch(`/pharmacies/?user_id=${user.userId}`);
+        const res = await fetch(toApiUrl(`/pharmacies/?user_id=${user.userId}`));
         if (!res.ok) throw new Error("Load fail");
         const data = await res.json();
         if (!cancelled && data.length > 0) setPharmacyProfile(data[0]);
@@ -75,7 +75,7 @@ export function PharmaAdmin() {
        if (!pharmacyProfile?.id) { setLoading(false); return; }
        setLoading(true);
        try {
-         const res = await fetch(`/pharmacies/${pharmacyProfile.id}/inventory`);
+         const res = await fetch(toApiUrl(`/pharmacies/${pharmacyProfile.id}/inventory`));
          if (!res.ok) throw new Error("fail");
          const data = await res.json();
          const mapped = data.map((inv: any) => ({ ...inv.medicine, stock: inv.quantity_available }));

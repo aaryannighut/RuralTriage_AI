@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { User, Stethoscope, Pill, ArrowLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { toApiUrl } from "../config/runtime";
 
 // ─── Shared field components ───────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); setError(""); setLoading(true);
     try {
-      const res  = await fetch("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(loginData) });
+      const res  = await fetch(toApiUrl("/auth/login"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(loginData) });
       const data = await res.json();
       if (!res.ok) { setError(data.detail ?? t("Login failed")); return; }
       setSuccess(`${t("Welcome back")}, ${data.name}!`);
@@ -139,13 +140,13 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(""); setLoading(true);
     try {
-      const authRes  = await fetch("/auth/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...creds, role: selectedRole }) });
+      const authRes  = await fetch(toApiUrl("/auth/signup"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...creds, role: selectedRole }) });
       const authData = await authRes.json();
       if (!authRes.ok) { setError(authData.detail ?? t("Signup failed")); return; }
 
       if (selectedRole === "patient") {
         const { height, weight, ...rest } = patientP;
-        await fetch("/patients/", {
+        await fetch(toApiUrl("/patients/"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -162,7 +163,7 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
           }),
         });
       } else if (selectedRole === "doctor") {
-        await fetch("/doctors/", {
+        await fetch(toApiUrl("/doctors/"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -180,7 +181,7 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
           }),
         });
       } else if (selectedRole === "pharmacy") {
-        await fetch("/pharmacies/", {
+        await fetch(toApiUrl("/pharmacies/"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

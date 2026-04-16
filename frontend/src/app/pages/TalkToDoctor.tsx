@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
-import { toWsUrl } from "../config/runtime";
+import { toWsUrl, toApiUrl } from "../config/runtime";
 
 const SIGNAL_WS_BASE = toWsUrl("/ws/signal");
 
@@ -409,14 +409,14 @@ export function TalkToDoctor() {
   const fetchPatientData = useCallback(async () => {
     if (!user?.userId) return;
     try {
-      const res = await fetch(`/patients/user/${user.userId}`);
+      const res = await fetch(toApiUrl(`/patients/user/${user.userId}`));
       if (res.ok) {
         const data = await res.json();
         setPatientId(data.id);
         
         // Fetch full doctor details if family_doctor_id exists
         if (data.family_doctor_id) {
-            const docRes = await fetch(`/patients/${data.id}/family-doctor`);
+            const docRes = await fetch(toApiUrl(`/patients/${data.id}/family-doctor`));
             if (docRes.ok) {
                 const docData = await docRes.json();
                 setFamilyDoctor(docData.doctor);
@@ -437,8 +437,8 @@ export function TalkToDoctor() {
     setLoadingApts(true);
     try {
       const [upRes, histRes] = await Promise.all([
-        fetch(`/appointments/upcoming/${patientId}`),
-        fetch(`/appointments/history/${patientId}`)
+        fetch(toApiUrl(`/appointments/upcoming/${patientId}`)),
+        fetch(toApiUrl(`/appointments/history/${patientId}`))
       ]);
       if (upRes.ok) setUpcomingApts(await upRes.json());
       if (histRes.ok) setHistoryApts(await histRes.json());
@@ -457,7 +457,7 @@ export function TalkToDoctor() {
   useEffect(() => {
     const url = searchQuery ? `/doctors/search?query=${searchQuery}` : "/doctors/";
     setLoadingDocs(true);
-    fetch(url)
+    fetch(toApiUrl(url))
       .then((res) => {
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         return res.json() as Promise<Doctor[]>;
@@ -479,7 +479,7 @@ export function TalkToDoctor() {
     setLoadingSlots(true);
     setBookingError("");
     try {
-      const res = await fetch(`/doctors/${doc.id}/available-slots`);
+      const res = await fetch(toApiUrl(`/doctors/${doc.id}/available-slots`));
       if (!res.ok) throw new Error(t("Failed to load available slots"));
       const data = await res.json();
       setAvailableSlots(data.slots || []);
@@ -497,7 +497,7 @@ export function TalkToDoctor() {
     }
     
     try {
-      const res = await fetch(`/appointments/create`, {
+      const res = await fetch(toApiUrl(`/appointments/create`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -531,7 +531,7 @@ export function TalkToDoctor() {
   const handleCancel = async (id: number) => {
     if (!window.confirm(t("CONFIRMATION REQUIRED: Are you sure you wish to decommission this appointment?"))) return;
     try {
-      const res = await fetch(`/appointments/cancel/${id}`, { method: "PUT" });
+      const res = await fetch(toApiUrl(`/appointments/cancel/${id}`), { method: "PUT" });
       if (res.ok) fetchAppointments();
     } catch (err) {
       console.error("Cancel Failure:", err);
@@ -541,7 +541,7 @@ export function TalkToDoctor() {
   const handleReschedule = async () => {
     if (!aptToReschedule || !bookingDate || !bookingTime) return;
     try {
-      const res = await fetch(`/appointments/reschedule/${aptToReschedule.id}`, {
+      const res = await fetch(toApiUrl(`/appointments/reschedule/${aptToReschedule.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ new_date: bookingDate, new_time: bookingTime }),
@@ -562,7 +562,7 @@ export function TalkToDoctor() {
     
     if (!currentPatientId && activeUserId) {
       try {
-        const res = await fetch(`/patients/user/${activeUserId}`);
+        const res = await fetch(toApiUrl(`/patients/user/${activeUserId}`));
         if (res.ok) {
           const data = await res.json();
           currentPatientId = data.id;
@@ -583,7 +583,7 @@ export function TalkToDoctor() {
       const apiPath = isUpdate ? "/patients/change-family-doctor" : "/patients/set-family-doctor";
       const method = isUpdate ? "PUT" : "POST";
 
-      const res = await fetch(apiPath, {
+      const res = await fetch(toApiUrl(apiPath), {
         method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ patient_id: currentPatientId, doctor_id: docId }),
@@ -600,7 +600,7 @@ export function TalkToDoctor() {
         }
         
         // Notify the doctor
-        await fetch("/doctor/notification", {
+        await fetch(toApiUrl("/doctor/notification"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
@@ -625,7 +625,7 @@ export function TalkToDoctor() {
     if (!window.confirm(t("Are you sure you want to remove your family doctor?"))) return;
 
     try {
-      const res = await fetch(`/patients/remove-family-doctor/${patientId}`, {
+      const res = await fetch(toApiUrl(`/patients/remove-family-doctor/${patientId}`), {
         method: "DELETE",
       });
       if (res.ok) {

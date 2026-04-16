@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FileText, Upload, AlertCircle, Download, Trash2, Eye, Image as ImageIcon, Loader2, ShieldAlert } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { toApiUrl } from "../config/runtime";
 
 interface HealthRecordItem {
   id: string; type: string; title: string; date: string; file: string; file_url?: string; public_id?: string; uploaded_at?: string;
@@ -71,7 +72,7 @@ export function HealthRecords() {
         return;
       }
       try {
-        const res = await fetch(`/patients/user/${activeUserId}`);
+        const res = await fetch(toApiUrl(`/patients/user/${activeUserId}`));
         if (!res.ok) throw new Error(t("Failed to synchronize health repository from master mainframe."));
         const data: PatientData = await res.json();
         setPatient(data); setRecords(normalizeRecords(data.health_records));
@@ -84,7 +85,7 @@ export function HealthRecords() {
   const saveRecordsToBackend = async (nextRecords: HealthRecordItem[]) => {
     if (!patient) throw new Error("Patient profile not found");
     const payload = { ...patient, health_records: nextRecords };
-    const res = await fetch(`/patients/${patient.id}`, {
+    const res = await fetch(toApiUrl(`/patients/${patient.id}`), {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
@@ -109,7 +110,7 @@ export function HealthRecords() {
     setRecordSaving(true); setRecordError(""); setRecordSuccess("");
     try {
       const uploadForm = new FormData(); uploadForm.append("file", recordFile);
-      const res = await fetch("/health-records/upload", { method: "POST", body: uploadForm });
+      const res = await fetch(toApiUrl("/health-records/upload"), { method: "POST", body: uploadForm });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || t("Remote transmission failed"));
 
@@ -158,7 +159,7 @@ export function HealthRecords() {
     try {
       const fd = new FormData(); fd.append("image", uploadedFile);
       fd.append("custom_prompt", "Explain this medical report in very easy language.");
-      const res = await fetch("/health-records/analyze", { method: "POST", body: fd });
+      const res = await fetch(toApiUrl("/health-records/analyze"), { method: "POST", body: fd });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || t("Analysis engine failure"));
       setAiExplanation(data.explanation || t("No explanation returned"));

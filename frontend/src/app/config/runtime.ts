@@ -1,4 +1,4 @@
-const DEFAULT_PROD_API_BASE = "https://ruralcare-by09.onrender.com";
+const DEFAULT_PROD_API_BASE = "https://ruraltriage-api-production.up.railway.app";
 
 const normalizeBase = (url: string) => url.trim().replace(/\/+$/, "");
 

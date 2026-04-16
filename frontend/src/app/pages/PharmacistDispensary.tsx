@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
+import { toApiUrl } from "../config/runtime";
 
 interface RxItem {
   medicine: string;
@@ -106,16 +107,16 @@ export function PharmacistDispensary() {
   const fetchData = async () => {
     if (!user.userId) return;
     try {
-      const profRes = await fetch(`/pharmacies/user/${user.userId}`);
+      const profRes = await fetch(toApiUrl(`/pharmacies/user/${user.userId}`));
       if (!profRes.ok) throw new Error(t("Pharmacy profile not found."));
       const profData = await profRes.json();
       setProfile(profData);
 
       const [invRes, rxRes, statsRes, histRes] = await Promise.all([
-        fetch(`/pharmacies/pharmacy/inventory/${profData.id}`),
-        fetch(`/pharmacies/pharmacy/prescriptions/${profData.id}`),
-        fetch(`/pharmacies/pharmacy/dashboard/stats?pharmacy_id=${profData.id}`),
-        fetch(`/pharmacies/pharmacy/transactions/${profData.id}`)
+        fetch(toApiUrl(`/pharmacies/pharmacy/inventory/${profData.id}`)),
+        fetch(toApiUrl(`/pharmacies/pharmacy/prescriptions/${profData.id}`)),
+        fetch(toApiUrl(`/pharmacies/pharmacy/dashboard/stats?pharmacy_id=${profData.id}`)),
+        fetch(toApiUrl(`/pharmacies/pharmacy/transactions/${profData.id}`))
       ]);
 
       if (invRes.ok) {
@@ -161,7 +162,7 @@ export function PharmacistDispensary() {
   const handleUpdateStatus = async (rxId: string, status: string) => {
     setProcessingStatus(true);
     try {
-      const res = await fetch(`/pharmacies/pharmacy/prescription/${rxId}`, {
+      const res = await fetch(toApiUrl(`/pharmacies/pharmacy/prescription/${rxId}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
@@ -205,7 +206,7 @@ export function PharmacistDispensary() {
         const billedAmt = orderItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
         const itemsPayload = orderItems.filter(i => i.quantity > 0).map(i => ({ medicine_name: i.name, quantity: i.quantity, price: i.price }));
         
-        const res = await fetch(`/pharmacies/pharmacy/prescription/${selectedRx.id}`, {
+        const res = await fetch(toApiUrl(`/pharmacies/pharmacy/prescription/${selectedRx.id}`), {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
