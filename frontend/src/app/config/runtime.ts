@@ -1,30 +1,24 @@
 const DEFAULT_PROD_API_BASE = "https://ruraltriage-api-production.up.railway.app";
 
-const normalizeBase = (url: string) => url.trim().replace(/\/+$/, "");
+const normalizeBase = (url?: string) => url?.trim().replace(/\/+$/, "") || "";
 
-type RuntimeEnv = {
-  VITE_API_URL?: string;
-  VITE_WS_URL?: string;
-  PROD?: boolean;
-};
+// Explicitly access import.meta.env properties for Vite's static replacement.
+// Dynamic access like import.meta.env[key] will NOT be replaced at build time.
+const envApiUrl = import.meta.env.VITE_API_URL;
+const envWsUrl = import.meta.env.VITE_WS_URL;
+const isProd = import.meta.env.PROD;
 
-const runtimeEnv = ((import.meta as ImportMeta & { env?: RuntimeEnv }).env ?? {}) as RuntimeEnv;
-
-const envApiBase = runtimeEnv.VITE_API_URL ? normalizeBase(runtimeEnv.VITE_API_URL) : "";
-
-export const API_BASE_URL = envApiBase || (runtimeEnv.PROD ? DEFAULT_PROD_API_BASE : "");
-
-const envWsBase = runtimeEnv.VITE_WS_URL ? normalizeBase(runtimeEnv.VITE_WS_URL) : "";
+export const API_BASE_URL = normalizeBase(envApiUrl) || (isProd ? DEFAULT_PROD_API_BASE : "");
 
 // Fallback logic for development vs production
-let derivedWsBase = API_BASE_URL ? API_BASE_URL.replace(/^http/, "ws") : `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`;
+let derivedWsBase = API_BASE_URL ? API_BASE_URL.replace(/^http/, "ws") : "";
 
 // In local development (localhost), if no API_BASE is provided, default to backend port 8000
-if (window.location.hostname === "localhost" && !API_BASE_URL) {
-  derivedWsBase = `${window.location.protocol === "https:" ? "wss" : "ws"}://localhost:8000`;
+if (typeof window !== "undefined" && window.location.hostname === "localhost" && !API_BASE_URL) {
+  derivedWsBase = `ws://localhost:8000`;
 }
 
-export const WS_BASE_URL = envWsBase || derivedWsBase;
+export const WS_BASE_URL = normalizeBase(envWsUrl) || derivedWsBase;
 
 export function toApiUrl(path: string): string {
   if (!path.startsWith("/")) {
@@ -35,5 +29,6 @@ export function toApiUrl(path: string): string {
 
 export function toWsUrl(path: string): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (!WS_BASE_URL) return normalizedPath;
   return `${WS_BASE_URL}${normalizedPath}`;
 }
