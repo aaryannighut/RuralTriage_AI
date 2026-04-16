@@ -65,8 +65,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+templates = Jinja2Templates(directory="app/templates")
 
 # 例外ハンドラの登録
 exception_handler.init_app(app)
