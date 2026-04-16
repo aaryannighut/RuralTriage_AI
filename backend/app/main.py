@@ -48,19 +48,20 @@ dcs: set = set()
 chat_rooms: dict[str, list[WebSocket]] = {}
 rooms: dict[str, list[WebSocket]] = {}
 
-@app.on_event("startup")
-def startup():
-    """Ensure database initializes safely on startup"""
-    try:
-        Base.metadata.create_all(bind=engine)
-        print("✅ Database connected and tables verified.")
-    except Exception as e:
-        print(f"❌ Database error: {e}")
-
 app = FastAPI(
     title="RuralTriage AI API",
     version="1.0.0"
 )
+
+@app.on_event("startup")
+def startup():
+    """Ensure database initializes safely on startup"""
+    try:
+        from app.database import Base, engine
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database connected and tables verified.")
+    except Exception as e:
+        print(f"❌ Database error: {e}")
 
 # --- MIDDLEWARE ---
 app.add_middleware(
