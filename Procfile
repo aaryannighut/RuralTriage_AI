@@ -1,1 +1,1 @@
-web: gunicorn -w 4 -k uvicorn.workers.UvicornWorker backend.app.main:app
+web: gunicorn --chdir backend -w 4 -k uvicorn.workers.UvicornWorker app.main:app
