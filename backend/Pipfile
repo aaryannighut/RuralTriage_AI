@@ -16,6 +16,13 @@ aiortc = "*"
 exceptiongroup = "*"
 sqlalchemy = "*"
 psycopg2-binary = "*"
+python-jose = {extras = ["cryptography"], version = "*"}
+passlib = {extras = ["bcrypt"], version = "*"}
+websockets = "*"
+google-generativeai = "*"
+python-dotenv = "*"
+opencv-python-headless = "*"
+numpy = "*"
 
 [dev-packages]
 black = "*"
