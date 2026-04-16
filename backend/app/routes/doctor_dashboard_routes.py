@@ -199,6 +199,7 @@ class DoctorPrescriptionIn(BaseModel):
     doctor_user_id: int
     medicines: List[PrescriptionMedicineIn]
     notes: str = ""
+    triage_decision: str = "treat_locally"  # treat_locally | refer_higher
 
 
 @router.post("/prescription", status_code=201)
@@ -240,6 +241,7 @@ async def issue_prescription(data: DoctorPrescriptionIn, db: Session = Depends(g
             for m in data.medicines
         ],
         "general_notes": data.notes,
+        "triage_decision": data.triage_decision,
         "ai_clinical_note": ai_note,
         "issued_at": datetime.utcnow().isoformat(),
         "issued_by": doctor.name,

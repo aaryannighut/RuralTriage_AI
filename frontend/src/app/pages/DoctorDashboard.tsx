@@ -45,7 +45,7 @@ interface DashboardStats {
 interface IssuedPrescription {
   id: number; patient_id: number; patient_name: string; doctor_id: number;
   items: { medicine: string; dosage: string; duration: string; notes: string }[];
-  general_notes: string; issued_at: string; issued_by: string; ai_clinical_note?: string;
+  general_notes: string; triage_decision?: string; issued_at: string; issued_by: string; ai_clinical_note?: string;
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -85,6 +85,7 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
 }) {
   const [items, setItems] = useState<PrescriptionItem[]>([{ medicine: "", dosage: "", duration: "", notes: "" }]);
   const [generalNotes, setGeneralNotes] = useState("");
+  const [triage, setTriage] = useState<"treat_locally" | "refer_higher">("treat_locally");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -104,6 +105,7 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
           doctor_user_id: doctorUserId,
           medicines: items.map(i => ({ name: i.medicine, dosage: i.dosage, duration: i.duration, notes: i.notes })),
           notes: generalNotes,
+          triage_decision: triage,
         }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.detail ?? "Dispatch failed"); }
@@ -157,6 +159,28 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
         <textarea value={generalNotes} onChange={e => setGeneralNotes(e.target.value)} rows={2}
           className="w-full px-3 py-2 border border-slate-300 bg-white text-sm outline-none focus:border-[#0056b3] resize-none"
           placeholder="e.g. Rest, increase water intake, follow-up after 5 days..." />
+      </div>
+
+      <div className="mb-2">
+        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Triage Recommendation</label>
+        <div className="flex gap-2">
+           <button 
+             type="button" 
+             onClick={() => setTriage("treat_locally")}
+             className={`flex-1 py-3 border-2 flex flex-col items-center justify-center transition-all ${triage === "treat_locally" ? "bg-green-50 border-green-600 text-green-800" : "bg-white border-slate-200 text-slate-400"}`}
+           >
+              <CheckCircle className={`w-5 h-5 mb-1 ${triage === "treat_locally" ? "text-green-600" : "text-slate-200"}`} />
+              <span className="text-[10px] font-black uppercase">Treat Locally</span>
+           </button>
+           <button 
+             type="button" 
+             onClick={() => setTriage("refer_higher")}
+             className={`flex-1 py-3 border-2 flex flex-col items-center justify-center transition-all ${triage === "refer_higher" ? "bg-blue-50 border-blue-600 text-blue-800" : "bg-white border-slate-200 text-slate-400"}`}
+           >
+              <TrendingUp className={`w-5 h-5 mb-1 ${triage === "refer_higher" ? "text-blue-600" : "text-slate-200"}`} />
+              <span className="text-[10px] font-black uppercase">Refer Higher</span>
+           </button>
+        </div>
       </div>
 
       <div className="flex gap-3 pt-2">
@@ -277,8 +301,15 @@ function PatientHistoryPanel({ patientId, onClose, onPrescribe }: {
               <section>
                 <h4 className="text-[9px] font-black text-[#0056b3] uppercase tracking-[0.25em] mb-2">Prior Prescriptions</h4>
                 {data.prescriptions?.length > 0 ? data.prescriptions.slice(-3).reverse().map((p: any, i: number) => (
-                  <div key={i} className="px-3 py-3 mb-1.5 border border-slate-200 bg-slate-50 text-xs font-bold">
-                    <div className="text-slate-400 uppercase mb-1.5">{p.issued_at ? new Date(p.issued_at).toLocaleDateString() : "—"} — {p.issued_by}</div>
+                  <div key={i} className="px-3 py-3 mb-1.5 border border-slate-200 bg-slate-50 text-xs font-bold relative">
+                    <div className="text-slate-400 uppercase mb-1.5 flex justify-between items-start">
+                       <span>{p.issued_at ? new Date(p.issued_at).toLocaleDateString() : "—"} — {p.issued_by}</span>
+                       {p.triage_decision && (
+                          <span className={`px-2 py-0.5 text-[8px] font-black border uppercase tracking-wider ${p.triage_decision === "treat_locally" ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
+                             {p.triage_decision === "treat_locally" ? "Managed Locally" : "Referral Issued"}
+                          </span>
+                       )}
+                    </div>
                     {(p.items || []).map((item: any, j: number) => (
                       <div key={j} className="uppercase text-slate-700">▸ {item.medicine} {item.dosage}{item.duration ? ` × ${item.duration}` : ""}</div>
                     ))}
@@ -363,6 +394,7 @@ function ReportGenerationModal({ appointment, doctorUserId, onSuccess, onCancel 
   const [selectedItems, setSelectedItems] = useState<PrescriptionItem[]>([]);
   const [manualItems, setManualItems] = useState<PrescriptionItem[]>([]);
   const [clinicalNotes, setClinicalNotes] = useState("");
+  const [triage, setTriage] = useState<"treat_locally" | "refer_higher">("treat_locally");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
@@ -406,6 +438,7 @@ function ReportGenerationModal({ appointment, doctorUserId, onSuccess, onCancel 
           doctor_user_id: doctorUserId,
           medicines: allItems.map(i => ({ name: i.medicine, dosage: i.dosage, duration: i.duration, notes: i.notes })),
           notes: clinicalNotes || `Automated report based on symptoms: ${appointment.notes}`,
+          triage_decision: triage,
         }),
       });
       if (!res.ok) throw new Error("Dispatch protocol failure.");
@@ -498,20 +531,35 @@ function ReportGenerationModal({ appointment, doctorUserId, onSuccess, onCancel 
       )}
 
       <button type="button" onClick={() => setManualItems(p => [...p, { medicine: "", dosage: "", duration: "", notes: "" }])}
-        className="w-full py-2 border-2 border-dashed border-slate-300 hover:border-[#0056b3] text-slate-400 hover:text-[#0056b3] text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 mb-4">
-        <Plus className="w-3.5 h-3.5" /> Ad-hoc Medicine
+        className="w-full py-2 border-2 border-dashed border-slate-300 hover:border-[#0056b3] text-slate-400 hover:text-[#0056b3] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 mb-6">
+        <Plus className="w-3.5 h-3.5" /> Force Manual Add
       </button>
 
       <div>
-        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Clinical Summary / Additional Notes</label>
-        <textarea value={clinicalNotes} onChange={e => setClinicalNotes(e.target.value)} rows={2}
-          className="w-full px-3 py-2 border border-slate-300 bg-white text-sm outline-none focus:border-[#0056b3] resize-none"
-          placeholder="e.g. Follow up in 3 days if symptoms persist..." />
+        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Triage Recommendation</label>
+        <div className="flex gap-2">
+           <button 
+             type="button" 
+             onClick={() => setTriage("treat_locally")}
+             className={`flex-1 py-3 border-2 flex flex-col items-center justify-center transition-all ${triage === "treat_locally" ? "bg-green-50 border-green-600 text-green-800" : "bg-white border-slate-200 text-slate-400"}`}
+           >
+              <CheckCircle className={`w-5 h-5 mb-1 ${triage === "treat_locally" ? "text-green-600" : "text-slate-200"}`} />
+              <span className="text-[10px] font-black uppercase">Treat Locally</span>
+           </button>
+           <button 
+             type="button" 
+             onClick={() => setTriage("refer_higher")}
+             className={`flex-1 py-3 border-2 flex flex-col items-center justify-center transition-all ${triage === "refer_higher" ? "bg-blue-50 border-blue-600 text-blue-800" : "bg-white border-slate-200 text-slate-400"}`}
+           >
+              <TrendingUp className={`w-5 h-5 mb-1 ${triage === "refer_higher" ? "text-blue-600" : "text-slate-200"}`} />
+              <span className="text-[10px] font-black uppercase">Refer Higher</span>
+           </button>
+        </div>
       </div>
 
       <div className="flex gap-3 pt-2">
-        <button onClick={onCancel} className="flex-1 py-3 border border-slate-300 text-slate-700 font-black uppercase text-xs hover:bg-slate-50">Cancel</button>
-        <button onClick={handleDispatch} disabled={sending || loading}
+        <button type="button" onClick={onCancel} className="flex-1 py-3 border border-slate-300 text-slate-700 font-black uppercase text-xs hover:bg-slate-50">Cancel</button>
+        <button type="button" onClick={handleDispatch} disabled={sending || loading}
           className="flex-1 py-3 bg-green-600 text-white font-black uppercase text-xs tracking-widest hover:bg-green-700 disabled:bg-slate-400 flex items-center justify-center gap-2">
           {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           {sending ? "Dispatching…" : "Generate & Send Report"}
@@ -584,7 +632,10 @@ export function DoctorDashboard() {
 
   // ── Load ──────────────────────────────────────────────────────────────────
   const reload = useCallback(async () => {
-    if (!user.userId) return;
+    if (!user.userId) {
+      setLoading(false);
+      return;
+    }
     try {
       const [profRes, queueRes, schedRes, riskRes, statsRes, rxRes, notifyRes, famRes] = await Promise.all([
         fetch(`/doctors/user/${user.userId}`),
@@ -729,7 +780,7 @@ export function DoctorDashboard() {
                 <ReportGenerationModal
                   appointment={reportingApt}
                   doctorUserId={user.userId!}
-                  onSuccess={(msg) => { setRxSuccess(msg); reload(); }}
+                  onSuccess={(msg, ai) => { setRxSuccess(msg); if (ai) setRxAINote(ai); reload(); }}
                   onCancel={() => setReportingApt(null)}
                 />
               )}
@@ -1087,6 +1138,11 @@ export function DoctorDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
+                    {rx.triage_decision && (
+                       <span className={`px-2 py-1 text-[9px] font-black border uppercase tracking-widest ${rx.triage_decision === "treat_locally" ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
+                          {rx.triage_decision === "treat_locally" ? "Local" : "Referral"}
+                       </span>
+                    )}
                     <span className="px-2 py-1 bg-green-50 text-green-700 border border-green-200 text-[9px] font-black uppercase">Issued</span>
                     <button
                       onClick={() => setPrescribing({ patient_id: rx.patient_id, patient_name: rx.patient_name })}
