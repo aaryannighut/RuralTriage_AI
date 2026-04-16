@@ -12,17 +12,18 @@ DATABASE_URL = _settings.DATABASE_URL
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Ensure DATABASE_URL is present
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL environment variable is missing!")
+# Configure engine arguments based on the database type
+engine_args = {"pool_pre_ping": True}
 
-# Production Engine Configuration
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,  # Ensures stale connections are recycled
-    pool_size=10,        # Production level pooling
-    max_overflow=20
-)
+if DATABASE_URL.startswith("sqlite"):
+    # SQLite requires check_same_thread=False for FastAPI/multi-threaded use
+    engine_args["connect_args"] = {"check_same_thread": False}
+else:
+    # PostgreSQL specific settings for production
+    engine_args["pool_size"] = 10
+    engine_args["max_overflow"] = 20
+
+engine = create_engine(DATABASE_URL, **engine_args)
 
 SessionLocal = sessionmaker(
     autocommit=False, 

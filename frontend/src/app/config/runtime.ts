@@ -8,7 +8,10 @@ const envApiUrl = import.meta.env.VITE_API_URL;
 const envWsUrl = import.meta.env.VITE_WS_URL;
 const isProd = import.meta.env.PROD;
 
-export const API_BASE_URL = normalizeBase(envApiUrl) || (isProd ? DEFAULT_PROD_API_BASE : "");
+const isLocalhost = typeof window !== "undefined" && 
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname.endsWith(".ngrok-free.dev"));
+
+export const API_BASE_URL = isLocalhost ? "" : (normalizeBase(envApiUrl) || (isProd ? DEFAULT_PROD_API_BASE : ""));
 
 // Fallback logic for development vs production
 let derivedWsBase = API_BASE_URL ? API_BASE_URL.replace(/^http/, "ws") : "";
