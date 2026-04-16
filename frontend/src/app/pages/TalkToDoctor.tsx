@@ -579,6 +579,18 @@ export function TalkToDoctor() {
     }
 
     try {
+      // Check if profile is complete before assignment
+      const profRes = await fetch(toApiUrl(`/patients/${currentPatientId}`));
+      if (profRes.ok) {
+        const profData = await profRes.json();
+        if (!profData.age || !profData.gender || !profData.phone) {
+           if (!window.confirm(t("PROFILE INCOMPLETE: Your registry profile is missing vital details (Age/Gender/Phone). Practitioners require this for enrollment. Would you like to proceed anyway?"))) {
+             navigate("/profile");
+             return;
+           }
+        }
+      }
+
       const isUpdate = !!familyDocId;
       const apiPath = isUpdate ? "/patients/change-family-doctor" : "/patients/set-family-doctor";
       const method = isUpdate ? "PUT" : "POST";
@@ -594,22 +606,22 @@ export function TalkToDoctor() {
         const found = doctors.find(d => d.id === docId);
         if (found) setFamilyDoctor(found);
         else {
-           // Fetch full doctor details if not in list
-           const dRes = await fetch(`/doctors/${docId}`);
+           const dRes = await fetch(toApiUrl(`/doctors/${docId}`));
            if (dRes.ok) setFamilyDoctor(await dRes.json());
         }
         
-        // Notify the doctor
+        // Notify the doctor with high-priority registry update
         await fetch(toApiUrl("/doctor/notification"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
             doctor_id: docId, 
-            message: `New patient assigned: ${user.name}` 
+            message: `Clinical Registry Update: New patient assigned (${user.name})` 
           }),
         });
 
-        alert(t("FAMILY DOCTOR ASSIGNED: Profile updated successfully."));
+        alert(t("FAMILY DOCTOR ASSIGNED: Profile updated successfully. Registry data synced to practitioner dashboard."));
+        fetchPatientData(); // Refresh local patient state
       } else {
         const errData = await res.json();
         alert(`${t("Registry Update Failed")}: ${errData.detail || t("Unknown error")}`);

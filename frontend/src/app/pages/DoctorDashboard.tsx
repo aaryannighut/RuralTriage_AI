@@ -41,7 +41,7 @@ interface HighRiskPatient {
 interface PrescriptionItem { medicine: string; dosage: string; duration: string; notes: string; }
 
 interface DashboardStats {
-  today_patients: number; total_queued: number; completed: number; high_risk: number;
+  today_patients: number; total_queued: number; completed: number; high_risk: number; total_family_patients: number;
 }
 
 interface IssuedPrescription {
@@ -676,7 +676,12 @@ export function DoctorDashboard() {
     } finally { setLoading(false); }
   }, [user.userId, t]);
 
-  useEffect(() => { reload(); }, [reload]);
+  useEffect(() => { 
+    reload(); 
+    // Enable 30s background polling for high-efficiency clinical sync
+    const interval = setInterval(reload, 30000);
+    return () => clearInterval(interval);
+  }, [reload]);
 
   // ── Availability Toggle ───────────────────────────────────────────────────────
   const handleAvailability = async (status: string) => {
@@ -915,7 +920,7 @@ export function DoctorDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Today's Patients" value={stats?.today_patients ?? todayCount} icon={<Users className="w-8 h-8" />} accent />
         <StatCard label="Total Queued"     value={stats?.total_queued ?? queue.length} icon={<ClipboardList className="w-8 h-8" />} />
-        <StatCard label="Completed"        value={stats?.completed ?? completedCount} icon={<CheckCircle className="w-8 h-8" />} />
+        <StatCard label="Family Patients"  value={stats?.total_family_patients ?? familyPatients.length} icon={<Heart className="w-8 h-8" />} accent />
         <StatCard label="High Risk" value={stats?.high_risk ?? highRisk.length} icon={<AlertTriangle className="w-8 h-8" />} danger={(stats?.high_risk ?? highRisk.length) > 0} />
       </div>
 
@@ -1023,7 +1028,7 @@ export function DoctorDashboard() {
                     </div>
                     <div className="min-w-0">
                       <div className="font-bold uppercase text-sm truncate">{p.patient_name}</div>
-                      <div className="text-[10px] font-bold text-slate-500 uppercase">{t("Age")}: {p.age || "N/A"} • {t("Gender")}: {p.gender || "N/A"} • {t("Phone")}: {p.phone || "N/A"}</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">{t("Age")}: {p.age ?? "N/A"} • {t("Gender")}: {p.gender || "N/A"} • {t("Phone")}: {p.phone || "N/A"}</div>
                       {p.symptoms && p.symptoms.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {p.symptoms.slice(0, 3).map((s: any, j: number) => (

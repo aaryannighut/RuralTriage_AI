@@ -482,17 +482,21 @@ def get_dashboard_stats(user_id: int = Query(...), db: Session = Depends(get_db)
     # Count high-risk patients (heuristic from symptoms)
     high_risk_count = 0
     for apt in scheduled:
-        patient = db.query(Patient).filter(Patient.id == apt.patient_id).first()
-        if patient:
-            symptoms = _latest_symptoms(patient, db)
+        p = db.query(Patient).filter(Patient.id == apt.patient_id).first()
+        if p:
+            symptoms = _latest_symptoms(p, db)
             if _priority_score(symptoms) == "HIGH":
                 high_risk_count += 1
+
+    # Count family patients
+    family_patient_count = db.query(Patient).filter(Patient.family_doctor_id == doctor.id).count()
 
     return {
         "today_patients": len(today_apts),
         "total_queued":   len(scheduled),
         "completed":      len(completed),
         "high_risk":      high_risk_count,
+        "total_family_patients": family_patient_count,
     }
 
 

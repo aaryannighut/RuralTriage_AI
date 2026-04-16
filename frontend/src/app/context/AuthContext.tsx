@@ -23,7 +23,7 @@ const STORAGE_KEY = "ruralcare_user";
 
 function loadStored(): { user: UserData; loggedIn: boolean } {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       return {
@@ -49,19 +49,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (data: UserData) => {
     setUser(data);
     setIsLoggedIn(true);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   };
 
   const logout = () => {
     setUser(defaultUser);
     setIsLoggedIn(false);
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
   };
 
   const updateProfile = (data: Partial<UserData>) => {
     setUser((prev) => {
       const next = { ...prev, ...data };
-      if (isLoggedIn) localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      if (isLoggedIn) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       return next;
     });
   };
