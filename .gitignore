@@ -7,3 +7,9 @@ backend/app/config/dev.env
 backend/app/config/*.local.env
 
 RuralCare_Documentation.md
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
