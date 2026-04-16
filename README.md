@@ -11,11 +11,19 @@
 
 ---
 
+## 🚀 Quick Links & Access
+
+| Resource | Access Link |
+| :--- | :--- |
+| **🌐 Live Deployment** | [RuralTriage Web App](https://rural-triage-ai--aaryannighut07.replit.app) |
+| **📱 Mobile App (APK)** | [Download RuralTriage.apk](https://drive.google.com/file/d/1bx5dD6vx2LjZByKunSMRyB5qqPsL5b0k/view?usp=sharing) |
+| **📊 Project PPT** | [View Presentation](https://drive.google.com/file/d/14dT2fB4_zuSmC9LVt7mRwrOrak7EvMr1/view?usp=sharing) |
+
+---
+
 ## 📖 Vision & Overview
 
-**RuralTriage AI** was born from a simple but powerful mission: **Distance should not be a barrier to clinical excellence.** 
-
-In many rural regions, patients either ignore critical symptoms due to travel costs or overburden tertiary hospitals with minor ailments. Our platform bridges this gap by providing an **AI-driven Triage Engine** that acts as the first line of defense. By combining lightning-fast LLM inference with modern telemedicine, we ensure that every patient receives a specialist-grade assessment within seconds.
+**RuralTriage AI** is a comprehensive clinical decision support system designed for rural healthcare ecosystems. It bridges the gap between remote patients and specialist care by providing an **AI-driven Triage Engine** that acts as the first line of defense. By combining lightning-fast LLM inference with modern telemedicine and a **synchronized multi-role workflow**, we ensure that every stakeholder in the clinical cycle—Patient, Doctor, and Pharmacist—is seamlessly connected.
 
 ---
 
@@ -23,13 +31,21 @@ In many rural regions, patients either ignore critical symptoms due to travel co
 
 | Feature | For Patients | For Doctors | For Pharmacists |
 | :--- | :--- | :--- | :--- |
-| **🩺 AI Triage** | Instant symptom checker & risk categorization. | High-priority patient flags & diagnostic assist. | — |
-| **👨‍⚕️ Tele-Consult** | Bookings & secure WebRTC video/audio calls. | Queue management & clinical record access. | — |
-| **💊 Prescriptions** | Digital access to medication & AI notes. | Real-time generation & dispatch to registry. | Order tracking & dispensary workflow. |
+| **🩺 AI Triage** | Instant symptom checker & 4-tier risk categorization. | High-priority patient flags & AI diagnostic reasoning. | — |
+| **👨‍⚕️ Tele-Consult** | Secure WebRTC video/audio calls with "Join" links. | Master Queue management & family patient registry. | — |
+| **💊 Prescriptions** | Digital access to medication & AI clinical notes. | Real-time generation & dispatch to pharmacy registry. | Order tracking & full dispensary workflow. |
 | **📁 Health Records** | Personal medical cloud & AI report parsing. | Archive review & laboratory history analysis. | — |
-| **📦 Pharmacy Hub** | Local medicine availability & search. | — | Full inventory control & stock management. |
-| **🚨 Priority Care** | Fast-track triage for critical indicators. | Emergency alerts for high-risk triage cases. | — |
+| **📦 Pharmacy Hub** | Local medicine availability & search. | — | Inventory control, revenue tracking & stock alerts. |
+| **🔄 Live Sync** | Real-time updates for booked consultations. | Background polling for instant queue updates. | Auto-refresh for new incoming prescriptions. |
 
+---
+
+## 🛠️ Key Technical Implementations
+
+1.  **Independent Tab Sessions**: Leverages `sessionStorage` to allow developers and testers to run different roles (Doctor, Patient, Pharmacist) in independent browser tabs simultaneously.
+2.  **High-Speed AI Inference**: Powered by **Groq LLaMA-3 70B**, generating structured clinical triage decisions in under 500ms.
+3.  **Cross-Dashboard Synchronization**: Real-time background polling ensures that once a doctor issues a prescription, it appears on the pharmacist's dispensary terminal within seconds.
+4.  **Clinical Triage Logic**: A robust 4-tier decision system (Treat Locally, Monitor, Refer, Emergency) backed by deterministic clinical red-flag heuristics.
 
 ---
 
@@ -41,118 +57,31 @@ RuralTriage_AI/
 │   ├── app/
 │   │   ├── main.py         # Main entry point & API routes
 │   │   ├── models.py       # SQLAlchemy Database Models
-│   │   ├── database.py     # DB connection & session management
-│   │   ├── routes/         # Feature-specific API routes (Doctor, Patient, Triage)
-│   │   ├── schemas/        # Pydantic data validation models
-│   │   └── services/       # Core logic (AI Integrations, ML Inference)
-│   ├── requirements.txt    # Python dependencies
-│   └── .env                # System configuration (API Keys)
+│   │   ├── database.py     # DB connection (SQLite locally, PostgreSQL in Prod)
+│   │   ├── routes/         # Feature-specific API routes (Doctor, Pharmacist, Patient)
+│   │   └── services/       # Core AI & Triage logic
 ├── frontend/               # React Vite Frontend
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── components/ # Reusable UI components
-│   │   │   └── pages/      # Main workflow pages (Consultation, Dashboard)
-│   │   ├── styles/         # Global CSS & Tailwind configuration
-│   │   └── main.tsx        # React entry point
-│   ├── public/             # Assets (Logo, Icons, Banners)
-│   └── package.json        # Frontend dependencies
-├── README.md               # You are here 📍
-└── test.db                 # Local development database (SQLite)
+│   │   │   ├── context/    # Auth & Language state management
+│   │   │   └── pages/      # Dashboards (Doctor, Patient, Pharmacist)
+│   │   ├── styles/         # Vanilla CSS & Tailwind integrations
+├── README.md               # Documentation
+└── ruraltriage.db          # Active development database
 ```
 
 ---
 
 ## 🧠 AI Techniques & Methodologies
 
-### ⚡ Powered by Groq LLaMA-3
-The "brain" of RuralTriage AI is powered by the **Groq LLaMA-3 70B** model. 
-
-**Why Groq?**
-In emergency medical triage, every second counts. Traditional LLM APIs can be slow, but **Groq's LPU™ (Language Processing Unit)** technology allows us to generate complex medical decisions in **milliseconds**. 
-
-**Core AI Functions:**
-1.  **Symptom Differential**: AI analyzes patient-reported symptoms and cross-references them with common/rare conditions.
-2.  **Risk Triage**: Categorizes patients into Low, Medium, or High risk based on clinical red flags (e.g., chest pain, respiratory distress).
-3.  **Prescription Assistance**: Suggests appropriate drug classes and dosages to doctors to reduce human error.
-4.  **Medical Report Interpretation**: Simplifies complex lab results (X-rays, blood work) into humanized, easy-to-understand language for patients.
-
----
-
-## ⚙️ Professional Setup & Installation
-
-Follow these steps exactly to get the system up and running on your local machine.
-
-### **1. Prerequisites**
-*   **Python 3.10+** (Check with `python --version`)
-*   **Node.js 18+** (Check with `node --version`)
-*   **Git**
-
-### **2. Backend Setup**
-Open a terminal and run the following:
-```bash
-# Navigate to backend
-cd backend
-
-# Create a virtual environment
-python -m venv venv
-
-# Activate the virtual environment
-# On Windows:
-.\venv\Scripts\activate
-# On Linux/Mac:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create your .env file in the root of 'backend' directory
-# Contents:
-# GROQ_API_KEY=your_key_here
-# DATABASE_URL=sqlite:///./test.db
-
-# Start the server
-python -m uvicorn app.main:app --reload
-```
-*Backend runs at: `http://localhost:8000`*
-
-### **3. Frontend Setup**
-Open a **new** terminal and run:
-```bash
-# Navigate to frontend
-cd frontend
-
-# Install dependencies
-npm install
-
-# Launch Development Server
-npm run dev
-```
-*Frontend runs at: `http://localhost:5173`*
-
----
-
-## 🔑 Required API Credentials
-
-To enable the full power of RuralTriage AI, you need the following keys in your `backend/.env` file:
-
-| Key | Why it's needed |
-| :--- | :--- |
-| `GROQ_API_KEY` | **Critical**: Powers the entire triage and clinical diagnostic engine. |
-| `CLOUDINARY_URL` | **Optional**: Used for cloud-based storage of medical reports. The system will fallback to local storage if this is missing. |
-
----
-
-## 🔄 The RuralTriage Ecosystem
-1.  **Triage Phase**: Patient enters symptoms → AI calculates urgency.
-2.  **Clinical Phase**: High-risk patients are pushed to the top of the **Doctor's Master Queue**.
-3.  **Tele-Consultation**: Secure video/audio link established via the dashboard.
-4.  **Resolution**: Doctor issues an **E-Prescription** which is instantly visible to the patient and their local **Pharmacy Registry**.
+The system uses **Groq's LPU™ (Language Processing Unit)** to provide authoritative clinical assessments.
+*   **Symptom Differential**: AI analyzes patient inputs and cross-references them with clinical red flags.
+*   **Risk Triage**: Categorizes patients based on clinical urgency.
+*   **Report Interpretation**: Uses LLMs to simplify complex lab reports into patient-friendly language.
 
 ---
 
 ## 👥 The Development Team
-
-This project was envisioned and developed by a dedicated team of innovators focused on making an impact in healthcare accessibility:
 
 *   **Aaryan Nighut** — Lead Architect & Backend Engineering
 *   **Ekanksh Mohite** — Full Stack Development & UI/UX Specialist
@@ -160,20 +89,9 @@ This project was envisioned and developed by a dedicated team of innovators focu
 
 ---
 
-## 🚀 Deployment to Render
+## ⚙️ Setup & Installation
 
-This project is configured for seamless deployment via [Render Blueprints](https://render.com/docs/blueprints).
-
-### **Automated Deployment**
-1.  Connect your GitHub repository to **Render**.
-2.  Render will automatically detect the `render.yaml` file.
-3.  Click **"Apply"** to launch both the **Backend API** and the **Frontend Static Site**.
-
-### **Manual Configuration (If needed)**
-If you prefer manual setup for the Backend:
-*   **Root Directory**: `backend`
-*   **Build Command**: `pip install -r requirements.txt`
-*   **Start Command**: `gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app`
+Please refer to our [Deployment Documentation](https://rural-triage-ai--aaryannighut07.replit.app) for full setup instructions (Python 3.10+, Node.js 18+).
 
 ---
 
