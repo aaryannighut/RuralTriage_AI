@@ -603,3 +603,27 @@ async def get_ai_report_suggestions(appointment_id: int, db: Session = Depends(g
         "symptoms": symptoms_text,
         "suggestions": suggestions
     }
+
+# ── 12. Enrolled Family Patients ───────────────────────────────────────────────
+
+@router.get("/family-patients")
+def get_family_patients(user_id: int = Query(...), db: Session = Depends(get_db)):
+    """All patients that have enrolled this doctor as their family guardian."""
+    doctor = _get_doctor_or_404(user_id, db)
+    
+    patients = db.query(Patient).filter(Patient.family_doctor_id == doctor.id).all()
+    results = []
+    
+    from app.routes.patient_routes import list_symptoms
+    for p in patients:
+        symptoms = list_symptoms(p.id, db)
+        results.append({
+            "patient_id": p.id,
+            "patient_name": p.name,
+            "age": p.age,
+            "gender": p.gender,
+            "phone": p.phone,
+            "blood_group": p.blood_group,
+            "symptoms": symptoms,
+        })
+    return results

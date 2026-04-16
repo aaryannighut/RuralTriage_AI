@@ -553,6 +553,7 @@ export function DoctorDashboard() {
   const [queue,         setQueue]         = useState<QueuePatient[]>([]);
   const [schedule,      setSchedule]      = useState<ScheduledAppointment[]>([]);
   const [highRisk,      setHighRisk]      = useState<HighRiskPatient[]>([]);
+  const [familyPatients, setFamilyPatients] = useState<any[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState("");
   const [availability,  setAvailability]  = useState("Available");
@@ -573,7 +574,7 @@ export function DoctorDashboard() {
   useEffect(() => {
     if (location.hash) {
       const sectionId = location.hash.replace("#", "");
-      if (['queue', 'appointments', 'prescriptions'].includes(sectionId)) {
+      if (['queue', 'appointments', 'prescriptions', 'family'].includes(sectionId)) {
         setOpenSection(sectionId);
       }
     } else {
@@ -585,7 +586,7 @@ export function DoctorDashboard() {
   const reload = useCallback(async () => {
     if (!user.userId) return;
     try {
-      const [profRes, queueRes, schedRes, riskRes, statsRes, rxRes, notifyRes] = await Promise.all([
+      const [profRes, queueRes, schedRes, riskRes, statsRes, rxRes, notifyRes, famRes] = await Promise.all([
         fetch(`/doctors/user/${user.userId}`),
         fetch(`/doctor/patients/queue?user_id=${user.userId}`),
         fetch(`/doctor/appointments?user_id=${user.userId}`),
@@ -593,6 +594,7 @@ export function DoctorDashboard() {
         fetch(`/doctor/dashboard/stats?user_id=${user.userId}`),
         fetch(`/doctor/prescriptions?user_id=${user.userId}`),
         fetch(`/doctor/notifications?user_id=${user.userId}`),
+        fetch(`/doctor/family-patients?user_id=${user.userId}`),
       ]);
 
       if (!profRes.ok) throw new Error("Practitioner registry not found.");
@@ -606,6 +608,7 @@ export function DoctorDashboard() {
       if (statsRes.ok)  setStats(await statsRes.json());
       if (rxRes.ok)     setPrescriptions(await rxRes.json());
       if (notifyRes.ok) setNotifications(await notifyRes.json());
+      if (famRes.ok)    setFamilyPatients(await famRes.json());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registry synchronization failure.");
     } finally { setLoading(false); }
@@ -892,7 +895,7 @@ export function DoctorDashboard() {
                   </div>
                   <div className="min-w-0">
                     <div className="font-bold uppercase text-sm truncate">{p.patient_name}</div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">{p.date} {p.time} • {p.specialty}</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase">{p.date} {p.time}</div>
                     {p.symptoms.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {p.symptoms.slice(0, 3).map((s, j) => (
@@ -941,6 +944,52 @@ export function DoctorDashboard() {
         </PageSection>
       )}
 
+      {openSection === "family" && (
+        <PageSection title="Enrolled Family Patients" icon={<User className="w-5 h-5" />} badge={`${familyPatients.length} enrolled`}>
+          {familyPatients.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 uppercase font-bold text-xs tracking-widest border-t border-slate-200">
+              No patients have enrolled you as their family doctor yet.
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-200">
+              {familyPatients.map((p) => (
+                <div key={p.patient_id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:bg-slate-50">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-9 h-9 flex items-center justify-center font-black text-sm shrink-0 bg-[#0056b3] text-white">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold uppercase text-sm truncate">{p.patient_name}</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">Age: {p.age || "N/A"} • Gender: {p.gender || "N/A"} • Phone: {p.phone || "N/A"}</div>
+                      {p.symptoms && p.symptoms.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {p.symptoms.slice(0, 3).map((s: any, j: number) => (
+                            <span key={j} className="px-1.5 py-0.5 bg-yellow-50 border border-yellow-200 text-[9px] font-bold uppercase text-yellow-800">{s.symptom_name}</span>
+                          ))}
+                          {p.symptoms.length > 3 && <span className="text-[9px] text-slate-400">+{p.symptoms.length - 3} more</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => setViewingId(p.patient_id)}
+                      className="px-3 py-2 flex items-center gap-1.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-600 outline-none" title="View Medical Record">
+                      <Eye className="w-3.5 h-3.5" />
+                      <span className="text-[9px] font-black uppercase tracking-widest">History</span>
+                    </button>
+                    <button onClick={() => setPrescribing({ patient_id: p.patient_id, patient_name: p.patient_name })}
+                      className="px-3 py-2 flex items-center gap-1.5 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3] outline-none" title="Issue Prescription">
+                      <Pill className="w-3.5 h-3.5" />
+                      <span className="text-[9px] font-black uppercase tracking-widest">Prescribe</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </PageSection>
+      )}
+
       {openSection === "appointments" && (
         <PageSection title="Appointment Schedule" icon={<Calendar className="w-5 h-5" />} badge={`${schedule.length} total`}>
         {schedule.length === 0 ? (
@@ -963,7 +1012,6 @@ export function DoctorDashboard() {
                     <tr key={apt.id} className={`hover:bg-slate-50 ${isToday ? "bg-[#fffbea]" : ""}`}>
                       <td className="px-5 py-4">
                         <div className="font-bold uppercase text-xs">{apt.patient_name}</div>
-                        <div className="text-[9px] font-bold text-slate-400 mt-0.5">{apt.specialty}</div>
                       </td>
                       <td className="px-5 py-4 font-mono text-xs font-bold text-slate-700">
                         {apt.date}<br /><span className="text-slate-400">{apt.time}</span>
@@ -981,13 +1029,20 @@ export function DoctorDashboard() {
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
                           <button onClick={() => setViewingId(apt.patient_id)}
-                            className="p-2 border border-slate-300 bg-white hover:bg-slate-100"><Eye className="w-3.5 h-3.5" /></button>
+                            className="px-3 py-2 flex items-center gap-1.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-600" title="View History">
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">History</span>
+                          </button>
                           <button onClick={() => setPrescribing({ patient_id: apt.patient_id, patient_name: apt.patient_name })}
-                            className="p-2 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]"><Pill className="w-3.5 h-3.5" /></button>
+                            className="px-3 py-2 flex items-center gap-1.5 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]" title="Issue Prescription">
+                            <Pill className="w-3.5 h-3.5" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Prescribe</span>
+                          </button>
                            <button onClick={() => setReportingApt(apt)}
-                             className="p-2 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700"
+                             className="px-3 py-2 flex items-center gap-1.5 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700"
                              title="Generate AI Report based on symptoms">
                              <Sparkles className="w-3.5 h-3.5" />
+                             <span className="text-[9px] font-black uppercase tracking-widest">AI Report</span>
                            </button>
                            <button onClick={() => navigate(`/test-call?room=room-${apt.id}`)}
                              className="px-3 py-2 bg-[#0056b3] text-white text-[9px] font-black uppercase hover:bg-blue-800 flex items-center gap-1">

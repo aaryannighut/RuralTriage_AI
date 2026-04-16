@@ -28,6 +28,7 @@ export function Layout() {
 
   const doctorNavItems = [
     { name: "Clinical Dashboard", path: "/dashboard/doctor", icon: <Stethoscope className="w-5 h-5" /> },
+    { name: "Family Patients", path: "/dashboard/doctor#family", icon: <User className="w-5 h-5" /> },
     { name: "Appointments", path: "/dashboard/doctor#appointments", icon: <Calendar className="w-5 h-5" /> },
     { name: "Patient Queue", path: "/dashboard/doctor#queue", icon: <ClipboardList className="w-5 h-5" /> },
     { name: "Prescriptions", path: "/dashboard/doctor#prescriptions", icon: <Pill className="w-5 h-5" /> },
