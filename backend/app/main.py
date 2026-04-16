@@ -4,7 +4,7 @@ import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from aiortc import RTCPeerConnection, RTCSessionDescription
+#from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaRelay
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -106,7 +106,7 @@ async def offer(request: Request):
     params = await request.json()
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
-    pc = RTCPeerConnection()
+    # pc = RTCPeerConnection()
     pc_id = "PeerConnection(%s)" % uuid.uuid4()
     pcs.add(pc)
 
