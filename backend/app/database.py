@@ -8,7 +8,18 @@ db_url = _settings.DATABASE_URL
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(db_url, pool_pre_ping=True)
+# Configure engine arguments based on the database type
+engine_args = {"pool_pre_ping": True}
+
+if db_url.startswith("sqlite"):
+    # SQLite requires check_same_thread=False for FastAPI/multi-threaded use
+    engine_args["connect_args"] = {"check_same_thread": False}
+else:
+    # PostgreSQL specific settings for production
+    engine_args["pool_size"] = 10
+    engine_args["max_overflow"] = 20
+
+engine = create_engine(db_url, **engine_args)
 
 SessionLocal = sessionmaker(
     autocommit=False,
