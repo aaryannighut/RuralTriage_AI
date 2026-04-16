@@ -160,6 +160,23 @@ This project was envisioned and developed by a dedicated team of innovators focu
 
 ---
 
+## 🚀 Deployment to Render
+
+This project is configured for seamless deployment via [Render Blueprints](https://render.com/docs/blueprints).
+
+### **Automated Deployment**
+1.  Connect your GitHub repository to **Render**.
+2.  Render will automatically detect the `render.yaml` file.
+3.  Click **"Apply"** to launch both the **Backend API** and the **Frontend Static Site**.
+
+### **Manual Configuration (If needed)**
+If you prefer manual setup for the Backend:
+*   **Root Directory**: `backend`
+*   **Build Command**: `pip install -r requirements.txt`
+*   **Start Command**: `gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app`
+
+---
+
 <p align="center">
   <h3>🌟 <i>Bridging the distance between patients and specialists with intelligence.</i> 🏥</h3>
 </p>
