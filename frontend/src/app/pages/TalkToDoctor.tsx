@@ -54,6 +54,12 @@ interface Doctor {
   certificate: string | null;
 }
 
+const AVAIL_CONFIG: Record<string, { label: string; cls: string }> = {
+  Available: { label: "Available", cls: "bg-green-600 text-white border-green-700" },
+  Busy:      { label: "Busy",      cls: "bg-yellow-600 text-white border-yellow-700" },
+  "On Leave":{ label: "Off Duty",  cls: "bg-red-600 text-white border-red-700" },
+};
+
 function VideoCallRoom({
   roomId,
   doctorName,
@@ -643,76 +649,72 @@ export function TalkToDoctor() {
     <div className="w-full space-y-6">
       
       {/* --- DASHBOARD: UPCOMING APPOINTMENTS --- */}
-      <div className="border border-slate-300 bg-white">
-        <div className="p-4 bg-slate-100 border-b border-slate-300 flex items-center justify-between">
-           <h2 className="font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2">
-             <Calendar className="w-5 h-5 text-[#0056b3]" /> {t("Upcoming Appointments")}
-           </h2>
-           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white px-2 py-0.5 border border-slate-300">{t("Registry Active")}</span>
-        </div>
-        <div className="p-4 sm:p-6">
-          {loadingApts ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
-              <Loader2 className="w-8 h-8 animate-spin" />
-              <span className="text-xs font-bold uppercase tracking-widest">{t("Accessing Schedule...")}</span>
-            </div>
-          ) : upcomingApts.length === 0 ? (
-            <div className="py-12 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
-              <Clock className="w-10 h-10 mb-2 opacity-20" />
-              <span className="text-sm font-bold uppercase tracking-widest">{t("No Active Consultations Scheduled")}</span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {upcomingApts.map(apt => (
-                <div key={apt.id} className="border border-slate-300 bg-white flex flex-col hover:border-[#0056b3] transition-colors group">
-                  <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white border border-slate-300 flex items-center justify-center">
-                        <User className="w-5 h-5 text-[#0056b3]" />
+      {upcomingApts.length > 0 && (
+        <div className="border border-slate-300 bg-white shadow-sm transition-all">
+          <div className="p-4 bg-slate-100 border-b border-slate-300 flex items-center justify-between">
+             <h2 className="font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2">
+               <Calendar className="w-5 h-5 text-[#0056b3]" /> {t("Upcoming Appointments")}
+             </h2>
+             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white px-2 py-0.5 border border-slate-300">{t("Registry Active")}</span>
+          </div>
+          <div className="p-4 sm:p-6">
+            {loadingApts ? (
+              <div className="py-8 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-3">
+                <Loader2 className="w-4 h-4 animate-spin text-[#0056b3]" /> {t("Updating Schedule...")}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {upcomingApts.map(apt => (
+                  <div key={apt.id} className="border border-slate-300 bg-white flex flex-col hover:border-[#0056b3] transition-colors group">
+                    <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white border border-slate-300 flex items-center justify-center">
+                          <User className="w-5 h-5 text-[#0056b3]" />
+                        </div>
+                        <div>
+                          <div className="font-black text-slate-900 text-sm uppercase leading-tight">{t(apt.doctor_name || "Practitioner")}</div>
+                          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t(apt.specialty)}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-black text-slate-900 text-sm uppercase leading-tight">{t(apt.doctor_name)}</div>
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t(apt.specialty)}</div>
+                      <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 border border-yellow-300 text-[10px] font-black uppercase tracking-tighter">{t("Scheduled")}</span>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center gap-3 text-slate-600">
+                        <Calendar className="w-4 h-4" />
+                        <span className="text-xs font-bold uppercase tracking-tighter">{apt.date}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-slate-600">
+                        <Clock className="w-4 h-4" />
+                        <span className="text-xs font-bold uppercase tracking-tighter">{apt.time}</span>
                       </div>
                     </div>
-                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 border border-yellow-300 text-[10px] font-black uppercase tracking-tighter">{t("Scheduled")}</span>
-                  </div>
-                  <div className="p-4 space-y-3">
-                    <div className="flex items-center gap-3 text-slate-600">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-tighter">{apt.date}</span>
+                    <div className="mt-auto border-t border-slate-100 p-2 grid grid-cols-3 gap-2 bg-slate-50/50">
+                      <button 
+                        onClick={() => navigate(`/test-call?room=room-${apt.id}`)}
+                        className="py-2 bg-[#0056b3] text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-800 transition-none flex items-center justify-center gap-2"
+                      >
+                        <Video className="w-3 h-3" /> {t("Join")}
+                      </button>
+                      <button 
+                        onClick={() => { setAptToReschedule(apt); setBookingDate(apt.date); setBookingTime(apt.time); setShowReschedule(true); }}
+                        className="py-2 border border-slate-300 bg-white text-slate-700 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-none flex items-center justify-center gap-2"
+                      >
+                        <Clock className="w-3 h-3 text-blue-600" /> {t("Date")}
+                      </button>
+                      <button 
+                        onClick={() => handleCancel(apt.id)}
+                        className="py-2 border border-red-300 bg-white text-red-700 text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-none flex items-center justify-center gap-2"
+                      >
+                        <X className="w-3 h-3 text-red-600" /> {t("Cancel")}
+                      </button>
                     </div>
-                    <div className="flex items-center gap-3 text-slate-600">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-tighter">{apt.time}</span>
-                    </div>
                   </div>
-                  <div className="mt-auto border-t border-slate-100 p-2 grid grid-cols-3 gap-2 bg-slate-50/50">
-                    <button 
-                      onClick={() => navigate(`/test-call?room=room-${apt.id}`)}
-                      className="py-2 bg-[#0056b3] text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-800 transition-none flex flex-col items-center justify-center gap-1"
-                    >
-                      <Video className="w-3 h-3" /> {t("Join")}
-                    </button>
-                    <button 
-                      onClick={() => { setAptToReschedule(apt); setBookingDate(apt.date); setBookingTime(apt.time); setShowReschedule(true); }}
-                      className="py-2 border border-slate-300 bg-white text-slate-700 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-none flex flex-col items-center justify-center gap-1"
-                    >
-                      <Clock className="w-3 h-3 text-blue-600" /> {t("Date")}
-                    </button>
-                    <button 
-                      onClick={() => handleCancel(apt.id)}
-                      className="py-2 border border-red-300 bg-white text-red-700 text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-none flex flex-col items-center justify-center gap-1"
-                    >
-                      <X className="w-3 h-3" /> {t("Cancel")}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Official Advisory */}
       <div className="bg-[#fff9e6] border border-yellow-200 px-4 py-3 flex items-start sm:items-center gap-3">
@@ -736,7 +738,12 @@ export function TalkToDoctor() {
               <User className="w-10 h-10 text-[#0056b3]" />
             </div>
             <div className="flex-1 text-center md:text-left">
-              <div className="font-black text-slate-900 text-xl uppercase tracking-tight">{t(familyDoctor.name)}</div>
+              <div className="font-black text-slate-900 text-xl uppercase tracking-tight flex items-center gap-3">
+                {t(familyDoctor.name)}
+                <span className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-tighter border shadow-sm ${AVAIL_CONFIG[familyDoctor.availability]?.cls || "bg-slate-200 text-slate-700 border-slate-300"}`}>
+                  {t(AVAIL_CONFIG[familyDoctor.availability]?.label || familyDoctor.availability)}
+                </span>
+              </div>
               <div className="text-sm font-bold text-[#0056b3] uppercase tracking-widest">{t(familyDoctor.specialty)} • {familyDoctor.experience} {t("Years Experience")}</div>
               <p className="text-xs text-slate-500 mt-1 uppercase font-bold tracking-tighter">{t("Certified Regional Health Guardian")}</p>
             </div>
@@ -868,13 +875,11 @@ export function TalkToDoctor() {
                           <div className="text-xs text-slate-500 mt-1">{doc.experience} {t("Years Exp.")} | {t("Reg Fee")}: ₹{doc.fee}</div>
                        </td>
                        <td className="px-4 py-4 border-r border-slate-300 align-top">
-                          {doc.availability === "Available" ? (
-                            <span className="px-2 py-1 bg-[#e8f5e9] text-green-900 border border-green-300 text-xs font-bold uppercase">{t("Ready")}</span>
-                          ) : (
-                            <span className="px-2 py-1 bg-slate-200 text-slate-700 border border-slate-300 text-xs font-bold uppercase">{t(doc.availability)}</span>
-                          )}
-                          {doc.verified && <div className="mt-2 text-blue-700 text-xs font-bold flex items-center gap-1"><CheckIcon className="w-3 h-3"/> {t("CERTIFIED")}</div>}
-                       </td>
+                           <span className={`px-2 py-1 text-[10px] font-black uppercase border shadow-sm ${AVAIL_CONFIG[doc.availability]?.cls || "bg-slate-200 text-slate-700 border-slate-300"}`}>
+                             {t(AVAIL_CONFIG[doc.availability]?.label || doc.availability)}
+                           </span>
+                           {doc.verified && <div className="mt-2 text-blue-700 text-xs font-bold flex items-center gap-1"><CheckIcon className="w-3 h-3"/> {t("CERTIFIED")}</div>}
+                        </td>
                        <td className="px-4 py-4 align-top">
                          <div className="flex flex-col gap-2">
                            <button
@@ -900,11 +905,9 @@ export function TalkToDoctor() {
                      <div key={doc.id} className={`p-4 ${selectedDoctor?.id === doc.id ? "bg-[#e6f2ff]" : "bg-white"}`}>
                         <div className="flex justify-between items-start mb-2">
                           <div className="font-bold text-slate-900 text-base">{t(doc.name)}</div>
-                          {doc.availability === "Available" ? (
-                            <span className="px-2 py-1 bg-[#e8f5e9] text-green-900 border border-green-300 text-[10px] font-bold uppercase">{t("Ready")}</span>
-                          ) : (
-                            <span className="px-2 py-1 bg-slate-200 text-slate-700 border border-slate-300 text-[10px] font-bold uppercase">{t(doc.availability)}</span>
-                          )}
+                          <span className={`px-2 py-1 text-[10px] font-black uppercase border shadow-sm ${AVAIL_CONFIG[doc.availability]?.cls || "bg-slate-200 text-slate-700 border-slate-300"}`}>
+                            {t(AVAIL_CONFIG[doc.availability]?.label || doc.availability)}
+                          </span>
                         </div>
                         <div className="text-sm font-semibold">{t(doc.specialty)}</div>
                         <div className="text-xs text-slate-500 mt-1 mb-3">{t(doc.qualification || "Unspecified")} | {doc.experience} {t("Yrs")} | ₹{doc.fee}</div>

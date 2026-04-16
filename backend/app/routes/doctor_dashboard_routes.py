@@ -200,6 +200,7 @@ class DoctorPrescriptionIn(BaseModel):
     medicines: List[PrescriptionMedicineIn]
     notes: str = ""
     triage_decision: str = "treat_locally"  # treat_locally | refer_higher
+    appointment_id: Optional[int] = None
 
 
 @router.post("/prescription", status_code=201)
@@ -250,6 +251,13 @@ async def issue_prescription(data: DoctorPrescriptionIn, db: Session = Depends(g
     prescriptions = list(patient.prescriptions or [])
     prescriptions.append(prescription)
     patient.prescriptions = prescriptions
+    
+    # Auto-complete appointment if linked
+    if data.appointment_id:
+        apt = db.query(Appointment).filter(Appointment.id == data.appointment_id).first()
+        if apt:
+            apt.status = "Completed"
+            
     db.commit()
     db.refresh(patient)
 

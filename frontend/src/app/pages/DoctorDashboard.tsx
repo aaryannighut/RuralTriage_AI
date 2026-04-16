@@ -79,9 +79,10 @@ function StatCard({ label, value, icon, accent = false, danger = false }: {
 }
 
 // ── Prescription Form (modal) ─────────────────────────────────────────────────
-function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
+function PrescriptionModal({ patient, doctorUserId, appointmentId, onSuccess, onCancel }: {
   patient: { patient_id: number; patient_name: string };
   doctorUserId: number;
+  appointmentId?: number;
   onSuccess: (msg: string, aiNote?: string) => void;
   onCancel: () => void;
 }) {
@@ -109,6 +110,7 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
           medicines: items.map(i => ({ name: i.medicine, dosage: i.dosage, duration: i.duration, notes: i.notes })),
           notes: generalNotes,
           triage_decision: triage,
+          appointment_id: appointmentId,
         }),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.detail ?? "Dispatch failed"); }
@@ -444,6 +446,7 @@ function ReportGenerationModal({ appointment, doctorUserId, onSuccess, onCancel 
           medicines: allItems.map(i => ({ name: i.medicine, dosage: i.dosage, duration: i.duration, notes: i.notes })),
           notes: clinicalNotes || `${t("Automated report based on symptoms")}: ${appointment.notes}`,
           triage_decision: triage,
+          appointment_id: appointment.id,
         }),
       });
       if (!res.ok) throw new Error(t("Dispatch protocol failure."));
@@ -614,7 +617,7 @@ export function DoctorDashboard() {
   const [availability,  setAvailability]  = useState("Available");
 
   const [viewingId,     setViewingId]     = useState<number | null>(null);
-  const [prescribing,   setPrescribing]   = useState<{ patient_id: number; patient_name: string } | null>(null);
+  const [prescribing,   setPrescribing]   = useState<{ patient_id: number; patient_name: string; appointment_id?: number } | null>(null);
   const [rxSuccess,     setRxSuccess]     = useState("");
   const [rxAINote,      setRxAINote]      = useState("");
   const [stats,         setStats]         = useState<DashboardStats | null>(null);
@@ -756,6 +759,7 @@ export function DoctorDashboard() {
                 <PrescriptionModal
                   patient={prescribing}
                   doctorUserId={user.userId!}
+                  appointmentId={prescribing.appointment_id}
                   onSuccess={(msg, ai) => { setRxSuccess(msg); setRxAINote(ai ?? ""); reload(); }}
                   onCancel={() => setPrescribing(null)}
                 />
@@ -970,7 +974,7 @@ export function DoctorDashboard() {
                     className="p-2 border border-slate-300 bg-white hover:bg-slate-100 text-slate-600">
                     <Eye className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => setPrescribing({ patient_id: p.patient_id, patient_name: p.patient_name })}
+                  <button onClick={() => setPrescribing({ patient_id: p.patient_id, patient_name: p.patient_name, appointment_id: p.appointment_id })}
                     className="p-2 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]">
                     <Pill className="w-3.5 h-3.5" />
                   </button>
@@ -1091,7 +1095,7 @@ export function DoctorDashboard() {
                             <Eye className="w-3.5 h-3.5" />
                             <span className="text-[9px] font-black uppercase tracking-widest">{t("History")}</span>
                           </button>
-                          <button onClick={() => setPrescribing({ patient_id: apt.patient_id, patient_name: apt.patient_name })}
+                          <button onClick={() => setPrescribing({ patient_id: apt.patient_id, patient_name: apt.patient_name, appointment_id: apt.id })}
                             className="px-3 py-2 flex items-center gap-1.5 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]" title={t("Issue Prescription")}>
                             <Pill className="w-3.5 h-3.5" />
                             <span className="text-[9px] font-black uppercase tracking-widest">{t("Prescribe")}</span>

@@ -22,7 +22,7 @@ class AppointmentReschedule(BaseModel):
 class AppointmentOut(AppointmentBase):
     id: int
     status: str
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

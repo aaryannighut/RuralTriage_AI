@@ -1,20 +1,13 @@
-from sqlalchemy.orm import Session
-from app.database import SessionLocal
-from app.models import Appointment, Patient, User
+import sqlite3
+import os
 
-db = SessionLocal()
-
-print("--- Appointments ---")
-appointments = db.query(Appointment).all()
-for a in appointments:
-    print(f"Appt ID: {a.id}, Patient ID: {a.patient_id}, Doctor Name: {a.doctor_name}, Status: {a.status}")
-
-print("\n--- Patients ---")
-patients = db.query(Patient).all()
-for p in patients:
-    print(f"Patient ID: {p.id}, User ID: {p.user_id}, Name: {p.name}")
-
-print("\n--- Users ---")
-users = db.query(User).all()
-for u in users:
-    print(f"User ID: {u.id}, Email: {u.email}, Role: {u.role}")
+db_path = "backend/test.db"
+if not os.path.exists(db_path):
+    print(f"Database {db_path} not found.")
+else:
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE appointments SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL;")
+    conn.commit()
+    print(f"Updated {cursor.rowcount} rows")
+    conn.close()
