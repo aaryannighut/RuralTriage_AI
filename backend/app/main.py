@@ -59,9 +59,9 @@ def startup():
     try:
         from app.database import Base, engine
         Base.metadata.create_all(bind=engine)
-        print("✅ Database connected and tables verified.")
+        print("Database connected and tables verified.")
     except Exception as e:
-        print(f"❌ Database error: {e}")
+        print(f"Database error: {e}")
 
 # --- MIDDLEWARE ---
 app.add_middleware(
