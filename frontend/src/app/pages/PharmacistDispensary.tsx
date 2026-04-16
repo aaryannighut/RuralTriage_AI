@@ -22,7 +22,7 @@ interface IncomingPrescription {
   issued_by: string;
   issued_at: string;
   status: "pending" | "accepted" | "dispensed" | "rejected";
-  items: RxItem[];
+  medicines: RxItem[];
   general_notes?: string;
   ai_clinical_note?: string;
 }
@@ -298,7 +298,9 @@ export function PharmacistDispensary() {
         </div>
         
         <div className="flex items-center gap-2">
-           <button className="px-4 py-2 bg-[#0056b3] text-white text-[10px] font-black uppercase shadow-md hover:bg-blue-800 transition-all">Support Desk</button>
+           <button 
+             onClick={() => alert("Connecting to RuralTriage Help Desk... \n\nEmergency Support: +91-90000-00000")}
+             className="px-4 py-2 bg-[#0056b3] text-white text-[10px] font-black uppercase shadow-md hover:bg-blue-800 transition-all">Support Desk</button>
         </div>
       </div>
 
