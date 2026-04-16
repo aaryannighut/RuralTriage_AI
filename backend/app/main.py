@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 #from aiortc import RTCPeerConnection, RTCSessionDescription
-from aiortc.contrib.media import MediaBlackhole, MediaRelay
+# from aiortc.contrib.media import MediaBlackhole, MediaRelay
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import HTMLResponse
@@ -34,7 +34,7 @@ settings = Settings()
 
 pcs: set = set()
 dcs: set = set()
-relay = MediaRelay()
+# relay = MediaRelay()
 connections: list[WebSocket] = []
 
 # Chat rooms: room_id → list of WebSocket
