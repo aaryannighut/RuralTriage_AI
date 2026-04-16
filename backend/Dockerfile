@@ -12,7 +12,7 @@ COPY gunicorn.conf.py /gunicorn.conf.py
 # install environment dependencies
 RUN apt-get update -yqq \
   && apt-get install -yqq --no-install-recommends \
-  build-essential autoconf libssl-dev libffi-dev \
+  build-essential autoconf libssl-dev libffi-dev libpq-dev \
   openssl libgl1-mesa-dev libglib2.0-0 libsm6 libxrender1 libxext6 \
   libavdevice-dev libavfilter-dev libopus-dev libvpx-dev libopencv-dev \
   && apt-get -q clean
