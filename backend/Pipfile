@@ -15,6 +15,7 @@ pydantic-settings = "*"
 aiortc = "*"
 exceptiongroup = "*"
 sqlalchemy = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 black = "*"
