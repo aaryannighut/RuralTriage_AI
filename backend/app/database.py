@@ -4,7 +4,11 @@ from app.settings import Settings
 
 _settings = Settings()
 
-engine = create_engine(_settings.DATABASE_URL, pool_pre_ping=True)
+db_url = _settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+engine = create_engine(db_url, pool_pre_ping=True)
 
 SessionLocal = sessionmaker(
     autocommit=False,
