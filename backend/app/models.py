@@ -158,4 +158,5 @@ class Appointment(Base):
     time         = Column(String, nullable=False)
     status       = Column(String, default="Scheduled") # Scheduled | Completed | Cancelled
     meeting_link = Column(String, nullable=True)
+    notes        = Column(String, nullable=True)
     created_at   = Column(DateTime, default=func.now())

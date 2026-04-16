@@ -28,6 +28,7 @@ interface ScheduledAppointment {
   id: number; patient_id: number; patient_name: string;
   doctor_name: string; specialty: string; date: string;
   time: string; status: string; meeting_link: string | null;
+  notes?: string;
 }
 
 interface HighRiskPatient {
@@ -350,6 +351,176 @@ function PatientHistoryPanel({ patientId, onClose, onPrescribe }: {
   );
 }
 
+// ── AI Report Generation Modal ────────────────────────────────────────────────
+function ReportGenerationModal({ appointment, doctorUserId, onSuccess, onCancel }: {
+  appointment: ScheduledAppointment;
+  doctorUserId: number;
+  onSuccess: (msg: string, aiNote?: string) => void;
+  onCancel: () => void;
+}) {
+  const [loading, setLoading] = useState(true);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [selectedItems, setSelectedItems] = useState<PrescriptionItem[]>([]);
+  const [manualItems, setManualItems] = useState<PrescriptionItem[]>([]);
+  const [clinicalNotes, setClinicalNotes] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+
+  const updateManual = (i: number, k: keyof PrescriptionItem, v: string) =>
+    setManualItems(p => p.map((item, idx) => idx === i ? { ...item, [k]: v } : item));
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/doctor/ai/report-suggestions/${appointment.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ai_available) setSuggestions(data.suggestions);
+          else setError(data.message || "AI Analysis unavailable");
+        }
+      } catch { setError("Failed to synchronize with AI Registry."); }
+      finally { setLoading(false); }
+    })();
+  }, [appointment.id]);
+
+  const toggleItem = (s: any) => {
+    const exists = selectedItems.find(i => i.medicine === s.medicine);
+    if (exists) setSelectedItems(p => p.filter(i => i.medicine !== s.medicine));
+    else setSelectedItems(p => [...p, { medicine: s.medicine, dosage: s.dosage, duration: s.duration || "5 days", notes: s.reason || "" }]);
+  };
+
+  const handleDispatch = async () => {
+    const allItems = [
+      ...selectedItems,
+      ...manualItems.filter(i => i.medicine && i.dosage)
+    ];
+    if (allItems.length === 0) { setError("Please select or manually add at least one medication."); return; }
+    setSending(true); setError("");
+    try {
+      const res = await fetch("/doctor/prescription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_id: appointment.patient_id,
+          doctor_user_id: doctorUserId,
+          medicines: allItems.map(i => ({ name: i.medicine, dosage: i.dosage, duration: i.duration, notes: i.notes })),
+          notes: clinicalNotes || `Automated report based on symptoms: ${appointment.notes}`,
+        }),
+      });
+      if (!res.ok) throw new Error("Dispatch protocol failure.");
+      const data = await res.json();
+      onSuccess("Report dispatched to patient profile.", data.ai_note);
+    } catch (err) { setError(err instanceof Error ? err.message : "Server error"); }
+    finally { setSending(false); }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-yellow-50 border border-yellow-200 p-4">
+        <h4 className="text-[9px] font-black text-yellow-700 uppercase tracking-widest mb-1">Recorded Symptoms</h4>
+        <p className="text-xs font-bold text-slate-700 uppercase">{appointment.notes || "No specific symptoms on record."}</p>
+      </div>
+
+      <section>
+        <h4 className="text-[9px] font-black text-[#0056b3] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+          <Sparkles className="w-3 h-3" /> AI Suggested Medications
+        </h4>
+        
+        {loading ? (
+          <div className="flex items-center gap-3 py-6 justify-center text-slate-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Running AI Diagnostics…</span>
+          </div>
+        ) : error && suggestions.length === 0 ? (
+          <div className="p-4 border border-red-200 bg-red-50 text-red-800 text-[10px] font-black uppercase text-center">{error}</div>
+        ) : (
+          <div className="space-y-2">
+            {suggestions.map((s, i) => {
+              const active = selectedItems.some(item => item.medicine === s.medicine);
+              return (
+                <button key={i} onClick={() => toggleItem(s)}
+                  className={`w-full p-3 text-left border transition-all flex items-center justify-between group
+                    ${active ? "bg-[#0056b3] border-[#0056b3] text-white" : "bg-white border-slate-200 hover:border-[#0056b3] text-slate-700"}`}>
+                  <div>
+                    <div className="font-black uppercase text-xs">{s.medicine}</div>
+                    <div className={`text-[10px] font-bold uppercase mt-0.5 ${active ? "text-white/70" : "text-slate-400"}`}>
+                      {s.dosage} • {s.reason}
+                    </div>
+                  </div>
+                  <div className={`w-5 h-5 border flex items-center justify-center
+                    ${active ? "bg-white border-white text-[#0056b3]" : "bg-slate-50 border-slate-300 text-transparent"}`}>
+                    <CheckCircle className="w-3.5 h-3.5" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {manualItems.length > 0 && (
+        <section>
+          <h4 className="text-[9px] font-black text-[#0056b3] uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+            <Pill className="w-3 h-3" /> Manually Added Medications
+          </h4>
+          <div className="space-y-4 mb-4">
+            {manualItems.map((item, i) => (
+              <div key={i} className="border border-slate-200 bg-slate-50 p-4 relative">
+                <button type="button" onClick={() => setManualItems(p => p.filter((_, j) => j !== i))}
+                  className="absolute top-2 right-2 p-1 text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Name *</label>
+                    <input required value={item.medicine} onChange={e => updateManual(i, "medicine", e.target.value)} 
+                      className="w-full px-2 py-1.5 border border-slate-300 bg-white text-xs outline-none focus:border-[#0056b3] uppercase placeholder:normal-case font-bold" placeholder="Medicine Name" />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Dosage *</label>
+                    <input required value={item.dosage} onChange={e => updateManual(i, "dosage", e.target.value)} 
+                      className="w-full px-2 py-1.5 border border-slate-300 bg-white text-xs outline-none focus:border-[#0056b3] uppercase placeholder:normal-case font-bold" placeholder="10mg BD" />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Duration</label>
+                    <input value={item.duration} onChange={e => updateManual(i, "duration", e.target.value)} 
+                      className="w-full px-2 py-1.5 border border-slate-300 bg-white text-xs outline-none focus:border-[#0056b3]" placeholder="3 days" />
+                  </div>
+                  <div className="col-span-2 sm:col-span-1">
+                    <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Notes</label>
+                    <input value={item.notes} onChange={e => updateManual(i, "notes", e.target.value)} 
+                      className="w-full px-2 py-1.5 border border-slate-300 bg-white text-xs outline-none focus:border-[#0056b3]" placeholder="After food" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <button type="button" onClick={() => setManualItems(p => [...p, { medicine: "", dosage: "", duration: "", notes: "" }])}
+        className="w-full py-2 border-2 border-dashed border-slate-300 hover:border-[#0056b3] text-slate-400 hover:text-[#0056b3] text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 mb-4">
+        <Plus className="w-3.5 h-3.5" /> Ad-hoc Medicine
+      </button>
+
+      <div>
+        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Clinical Summary / Additional Notes</label>
+        <textarea value={clinicalNotes} onChange={e => setClinicalNotes(e.target.value)} rows={2}
+          className="w-full px-3 py-2 border border-slate-300 bg-white text-sm outline-none focus:border-[#0056b3] resize-none"
+          placeholder="e.g. Follow up in 3 days if symptoms persist..." />
+      </div>
+
+      <div className="flex gap-3 pt-2">
+        <button onClick={onCancel} className="flex-1 py-3 border border-slate-300 text-slate-700 font-black uppercase text-xs hover:bg-slate-50">Cancel</button>
+        <button onClick={handleDispatch} disabled={sending || loading}
+          className="flex-1 py-3 bg-green-600 text-white font-black uppercase text-xs tracking-widest hover:bg-green-700 disabled:bg-slate-400 flex items-center justify-center gap-2">
+          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {sending ? "Dispatching…" : "Generate & Send Report"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Page Section Wrapper ──────────────────────────────────────────────────────
 function PageSection({ title, icon, badge, children }: {
   title: string; icon: React.ReactNode; badge?: string | number;
@@ -393,6 +564,7 @@ export function DoctorDashboard() {
   const [stats,         setStats]         = useState<DashboardStats | null>(null);
   const [prescriptions, setPrescriptions] = useState<IssuedPrescription[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [reportingApt, setReportingApt] = useState<ScheduledAppointment | null>(null);
 
   const [openSection, setOpenSection] = useState<string>("dashboard");
   const location = useLocation();
@@ -532,6 +704,37 @@ export function DoctorDashboard() {
         </div>
       )}
 
+      {/* ── AI REPORT MODAL ── */}
+      {reportingApt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-300 w-full max-w-xl my-8">
+            <div className="bg-green-600 p-4 flex items-center justify-between">
+              <h3 className="text-white font-black uppercase tracking-wider flex items-center gap-2 text-sm">
+                <Sparkles className="w-4 h-4" /> AI Report Generation — {reportingApt.patient_name}
+              </h3>
+              <button onClick={() => setReportingApt(null)} className="text-white/70 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6">
+              {rxSuccess ? (
+                <div className="py-12 text-center">
+                  <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                  <p className="font-black uppercase text-green-900 text-sm">{rxSuccess}</p>
+                  <button onClick={() => { setReportingApt(null); setRxSuccess(""); reload(); }}
+                    className="mt-6 px-8 py-2 bg-green-600 text-white font-bold uppercase text-xs">Return to Dashboard</button>
+                </div>
+              ) : (
+                <ReportGenerationModal
+                  appointment={reportingApt}
+                  doctorUserId={user.userId!}
+                  onSuccess={(msg) => { setRxSuccess(msg); reload(); }}
+                  onCancel={() => setReportingApt(null)}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {openSection === "dashboard" && (
         <div className="space-y-6">
           {/* ── PROFILE BANNER ── */}
@@ -613,6 +816,22 @@ export function DoctorDashboard() {
                     <div className="flex gap-2 shrink-0">
                       <button onClick={() => setViewingId(p.patient_id)}
                         className="p-1.5 border border-slate-300 bg-white hover:bg-slate-100"><Eye className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setReportingApt({
+                          id: p.appointment_id,
+                          patient_id: p.patient_id,
+                          patient_name: p.patient_name,
+                          doctor_name: profile?.name || "Doctor",
+                          specialty: profile?.specialty || "Medicine",
+                          date: p.date,
+                          time: p.time,
+                          status: "Scheduled",
+                          meeting_link: null,
+                          notes: p.symptoms?.map((s: any) => `${s.symptom_name} (${s.duration || 'unknown'})`).join(", ") || "High risk symptoms."
+                      })}
+                        className="p-1.5 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700"
+                        title="Generate AI Report based on symptoms">
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </button>
                       <button onClick={() => navigate(`/test-call?room=room-${p.appointment_id}`)}
                         className="px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase hover:bg-red-700 flex items-center gap-1">
                         <Video className="w-3 h-3" /> Join
@@ -694,6 +913,22 @@ export function DoctorDashboard() {
                     className="p-2 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]">
                     <Pill className="w-3.5 h-3.5" />
                   </button>
+                  <button onClick={() => setReportingApt({
+                      id: p.appointment_id,
+                      patient_id: p.patient_id,
+                      patient_name: p.patient_name,
+                      doctor_name: profile?.name || "Doctor",
+                      specialty: p.specialty,
+                      date: p.date,
+                      time: p.time,
+                      status: "Scheduled",
+                      meeting_link: null,
+                      notes: p.symptoms?.map(s => `${s.symptom_name} (${s.duration || 'unknown'})`).join(", ") || "No specific symptoms on record."
+                  })}
+                    className="p-2 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700"
+                    title="Generate AI Report based on symptoms">
+                    <Sparkles className="w-3.5 h-3.5" />
+                  </button>
                   <button onClick={() => navigate(`/test-call?room=room-${p.appointment_id}`)}
                     className="px-4 py-2 bg-[#0056b3] text-white text-[9px] font-black uppercase tracking-widest hover:bg-blue-800 flex items-center gap-1">
                     <Video className="w-3 h-3" /> Consult
@@ -749,10 +984,15 @@ export function DoctorDashboard() {
                             className="p-2 border border-slate-300 bg-white hover:bg-slate-100"><Eye className="w-3.5 h-3.5" /></button>
                           <button onClick={() => setPrescribing({ patient_id: apt.patient_id, patient_name: apt.patient_name })}
                             className="p-2 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]"><Pill className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => navigate(`/test-call?room=room-${apt.id}`)}
-                            className="px-3 py-2 bg-[#0056b3] text-white text-[9px] font-black uppercase hover:bg-blue-800 flex items-center gap-1">
-                            <Video className="w-3 h-3" /> Start
-                          </button>
+                           <button onClick={() => setReportingApt(apt)}
+                             className="p-2 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700"
+                             title="Generate AI Report based on symptoms">
+                             <Sparkles className="w-3.5 h-3.5" />
+                           </button>
+                           <button onClick={() => navigate(`/test-call?room=room-${apt.id}`)}
+                             className="px-3 py-2 bg-[#0056b3] text-white text-[9px] font-black uppercase hover:bg-blue-800 flex items-center gap-1">
+                             <Video className="w-3 h-3" /> Start
+                           </button>
                           {apt.status === "Scheduled" && (
                             <button onClick={() => handleMarkComplete(apt.id)}
                               className="p-2 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700">

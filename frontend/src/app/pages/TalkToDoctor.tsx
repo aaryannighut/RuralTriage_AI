@@ -424,12 +424,12 @@ export function TalkToDoctor() {
   }, [user?.userId]);
 
   const fetchAppointments = useCallback(async () => {
-    if (!user?.userId) return;
+    if (!patientId) return;
     setLoadingApts(true);
     try {
       const [upRes, histRes] = await Promise.all([
-        fetch(`/appointments/upcoming/${user.userId}`),
-        fetch(`/appointments/history/${user.userId}`)
+        fetch(`/appointments/upcoming/${patientId}`),
+        fetch(`/appointments/history/${patientId}`)
       ]);
       if (upRes.ok) setUpcomingApts(await upRes.json());
       if (histRes.ok) setHistoryApts(await histRes.json());
@@ -438,7 +438,7 @@ export function TalkToDoctor() {
     } finally {
       setLoadingApts(false);
     }
-  }, [user?.userId]);
+  }, [patientId]);
 
   useEffect(() => {
     fetchAppointments();
@@ -492,7 +492,7 @@ export function TalkToDoctor() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          patient_id: user.userId || 0,
+          patient_id: patientId || 0,
           doctor_id: selectedDoctor.id,
           doctor_name: selectedDoctor.name,
           specialty: selectedDoctor.specialty,

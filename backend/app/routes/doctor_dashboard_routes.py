@@ -290,6 +290,7 @@ def get_doctor_schedule(
             "time":         apt.time,
             "status":       apt.status,
             "meeting_link": apt.meeting_link,
+            "notes":        apt.notes,
         })
     return results
 
@@ -538,3 +539,67 @@ def send_notification(data: NotificationIn, db: Session = Depends(get_db)):
 def get_notifications(user_id: int = Query(...), db: Session = Depends(get_db)):
     doctor = _get_doctor_or_404(user_id, db)
     return doctor.notifications or []
+
+
+# ── 11. AI Report/Prescription Suggestions ───────────────────────────────────
+
+@router.get("/ai/report-suggestions/{appointment_id}")
+async def get_ai_report_suggestions(appointment_id: int, db: Session = Depends(get_db)):
+    """
+    Given an appointment, suggest specific medicines (tablets/syrups) 
+    based on the symptoms (notes) recorded during booking.
+    """
+    apt = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    symptoms_text = apt.notes or "No specific symptoms recorded"
+    
+    if not _settings.GROQ_API_KEY:
+        return {
+            "ai_available": False,
+            "message": "Groq API not configured.",
+            "symptoms": symptoms_text,
+            "suggestions": []
+        }
+
+    prompt = (
+        "You are a clinical assistant. Based on the patient's symptoms, suggest 3-5 specific medication names (tablets, capsules, or syrups) "
+        "available in India. Provide common dosage and reason. "
+        "Return ONLY a JSON array of objects: [{\"medicine\": \"Name\", \"dosage\": \"10mg once daily\", \"duration\": \"5 days\", \"reason\": \"Used for...\"}]"
+    )
+    
+    result = await _ask_groq(
+        system_prompt=prompt,
+        user_message=f"Symptoms: {symptoms_text}. Specialty: {apt.specialty}",
+    )
+
+    if not result:
+        return {
+            "ai_available": False, 
+            "message": "AI generation failed.",
+            "suggestions": []
+        }
+
+    import json
+    import re
+    try:
+        # Clean the response to find the JSON array
+        match = re.search(r'\[.*\]', result, re.DOTALL)
+        if match:
+            suggestions = json.loads(match.group())
+        else:
+            suggestions = json.loads(result)
+    except Exception:
+        return {
+            "ai_available": False,
+            "message": "Failed to parse AI response.",
+            "raw": result,
+            "suggestions": []
+        }
+
+    return {
+        "ai_available": True,
+        "symptoms": symptoms_text,
+        "suggestions": suggestions
+    }

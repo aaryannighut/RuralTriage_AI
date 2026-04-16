@@ -10,6 +10,7 @@ class AppointmentBase(BaseModel):
     date: str
     time: str
     meeting_link: Optional[str] = None
+    notes: Optional[str] = None
 
 class AppointmentCreate(AppointmentBase):
     pass
