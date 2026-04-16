@@ -2,7 +2,9 @@
 
 ### "AI-Powered Rural Healthcare Triage & Telemedicine Platform"
 
-![RuralTriage AI Logo](frontend/public/logo.png)
+<p align="center">
+  <img src="frontend/public/logo.png" width="120" height="120" alt="RuralTriage AI Logo">
+</p>
 
 [![Tech Stack: FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Tech Stack: React](https://img.shields.io/badge/Frontend-React-61DAFB.svg?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
