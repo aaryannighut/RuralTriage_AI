@@ -26,6 +26,7 @@ from app.routes.pharmacist_routes import router as pharmacist_router
 from app.routes.pharmacy_routes import router as pharmacy_router
 from app.routes.medicine_search_routes import router as medicine_search_router
 from app.routes.appointment_routes import router as appointment_router
+from app.routes.translation_routes import router as translation_router
 
 BASE_DIR = Path(__file__).parent
 
@@ -79,6 +80,7 @@ app.include_router(pharmacist_router)
 app.include_router(pharmacy_router)
 app.include_router(medicine_search_router, prefix="/medicines", tags=["Medicines"])
 app.include_router(appointment_router)
+app.include_router(translation_router)
 
 # このアプリケーションのログ設定
 root_logger = logging.getLogger("app")

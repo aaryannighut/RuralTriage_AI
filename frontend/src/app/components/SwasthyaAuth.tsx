@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { User, Stethoscope, Pill, ArrowLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 // ─── Shared field components ───────────────────────────────────────────────
 
@@ -11,14 +12,15 @@ function Field({
   label: string; type: string; value: string;
   onChange: (v: string) => void; placeholder: string; required?: boolean;
 }) {
+  const { t } = useLanguage();
   return (
     <div>
       <label className="block text-sm font-semibold text-slate-900 mb-1.5 font-sans">
-        {label}{required && <span className="text-red-600 ml-0.5">*</span>}
+        {t(label)}{required && <span className="text-red-600 ml-0.5">*</span>}
       </label>
       <input
         type={type} required={required} value={value}
-        onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)} placeholder={t(placeholder)}
         className="w-full px-3 py-2 border border-slate-300 rounded-sm outline-none text-sm text-slate-900 bg-white font-sans focus:border-[#0056b3] focus:ring-1 focus:ring-[#0056b3] placeholder:text-slate-500 transition-none"
       />
     </div>
@@ -31,17 +33,18 @@ function SelectField({
   label: string; value: string; onChange: (v: string) => void;
   options: string[]; required?: boolean;
 }) {
+  const { t } = useLanguage();
   return (
     <div>
       <label className="block text-sm font-semibold text-slate-900 mb-1.5 font-sans">
-        {label}{required && <span className="text-red-600 ml-0.5">*</span>}
+        {t(label)}{required && <span className="text-red-600 ml-0.5">*</span>}
       </label>
       <select
         required={required} value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 border border-slate-300 rounded-sm outline-none text-sm text-slate-900 bg-white font-sans focus:border-[#0056b3] focus:ring-1 focus:ring-[#0056b3] transition-none"
       >
-        <option value="">Select…</option>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        <option value="">{t("Select…")}</option>
+        {options.map((o) => <option key={o} value={o}>{t(o)}</option>)}
       </select>
     </div>
   );
@@ -63,6 +66,7 @@ const ROLES: { id: Role; label: string; subtitle: string; icon: React.ReactNode 
 interface SwasthyaAuthProps { onClose?: () => void }
 
 export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
+  const { t } = useLanguage();
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -113,8 +117,8 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
     try {
       const res  = await fetch("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(loginData) });
       const data = await res.json();
-      if (!res.ok) { setError(data.detail ?? "Login failed"); return; }
-      setSuccess(`Welcome back, ${data.name}!`);
+      if (!res.ok) { setError(data.detail ?? t("Login failed")); return; }
+      setSuccess(`${t("Welcome back")}, ${data.name}!`);
       login({ name: data.name, email: data.email, phone: "", role: data.role ?? "patient", userId: data.id });
       setTimeout(() => {
         onClose?.();
@@ -122,13 +126,13 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
         else if (data.role === "pharmacy") navigate("/dashboard/pharmacist");
         else navigate("/");
       }, 900);
-    } catch { setError("Could not reach the server. Is the backend running?"); }
+    } catch { setError(t("Could not reach the server. Is the backend running?")); }
     finally   { setLoading(false); }
   };
 
   const handleCredentialsNext = (e: React.FormEvent) => {
     e.preventDefault(); setError("");
-    if (creds.password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    if (creds.password.length < 6) { setError(t("Password must be at least 6 characters.")); return; }
     setSignupStep("profile");
   };
 
@@ -137,7 +141,7 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
     try {
       const authRes  = await fetch("/auth/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...creds, role: selectedRole }) });
       const authData = await authRes.json();
-      if (!authRes.ok) { setError(authData.detail ?? "Signup failed"); return; }
+      if (!authRes.ok) { setError(authData.detail ?? t("Signup failed")); return; }
 
       if (selectedRole === "patient") {
         const { height, weight, ...rest } = patientP;
@@ -196,7 +200,7 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
         });
       }
 
-      setSuccess(`Account created! Welcome, ${authData.name} `);
+      setSuccess(`${t("Account created! Welcome")}, ${authData.name} `);
       login({ name: authData.name, email: authData.email, phone: selectedRole === "pharmacy" ? pharmacyP.phone : "", role: selectedRole, userId: authData.id });
       setTimeout(() => {
         onClose?.();
@@ -204,23 +208,23 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
         else if (selectedRole === "pharmacy") navigate("/dashboard/pharmacist");
         else navigate("/");
       }, 1400);
-    } catch { setError("Could not reach the server. Is the backend running?"); }
+    } catch { setError(t("Could not reach the server. Is the backend running?")); }
     finally   { setLoading(false); }
   };
 
-  const heading = activeTab === "login" ? "Login to Portal"
-    : signupStep === "role"        ? "Register on RuralTriage AI"
-    : signupStep === "credentials" ? "Account Credentials"
-    : "Profile Details";
+  const heading = activeTab === "login" ? t("Login to Portal")
+    : signupStep === "role"        ? t("Register on RuralTriage AI")
+    : signupStep === "credentials" ? t("Account Credentials")
+    : t("Profile Details");
 
   const RoleBadge = ({ onBack }: { onBack: () => void }) => (
     <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-300">
       <button type="button" onClick={onBack}
         className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 bg-transparent ">
-        <ArrowLeft className="w-4 h-4" /> Back
+        <ArrowLeft className="w-4 h-4" /> {t("Back")}
       </button>
       <div className="px-2 py-1 bg-[#e6f2ff] text-[#0056b3] border border-blue-200 rounded-sm text-xs font-bold uppercase">
-        {selectedRole}
+        {t(selectedRole)}
       </div>
     </div>
   );
@@ -240,13 +244,13 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
                 ? "bg-[#0056b3] text-white"
                 : "bg-transparent text-slate-600 hover:bg-slate-200"
             }`}>
-            {tab === "login" ? "Login" : "Register"}
+            {tab === "login" ? t("Login") : t("Register")}
           </button>
         ))}
       </div>
 
-      {success && <div className="mb-4 px-3 py-2 bg-[#e8f5e9] border border-green-300 rounded-sm text-sm text-green-900">✓ {success}</div>}
-      {error && <div className="mb-4 px-3 py-2 bg-red-50 border border-red-300 rounded-sm text-sm text-red-900">{error}</div>}
+      {success && <div className="mb-4 px-3 py-2 bg-[#e8f5e9] border border-green-300 rounded-sm text-sm text-green-900">✓ {t(success)}</div>}
+      {error && <div className="mb-4 px-3 py-2 bg-red-50 border border-red-300 rounded-sm text-sm text-red-900">{t(error)}</div>}
 
       {/* LOGIN */}
       {activeTab === "login" && (
@@ -255,7 +259,7 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
           <Field label="Password" type="password" value={loginData.password} onChange={(v) => setLoginData({ ...loginData, password: v })} placeholder="Password" required />
           <button type="submit" disabled={loading}
             className="mt-4 w-full py-2.5 bg-[#0056b3] hover:bg-blue-800 disabled:bg-slate-400 text-white rounded-sm text-md font-bold uppercase tracking-wider border border-transparent focus:outline-none focus:ring-2 focus:ring-[#0056b3]">
-            {loading ? "Authenticating..." : "Login securely"}
+            {loading ? t("Authenticating...") : t("Login securely")}
           </button>
         </form>
       )}
@@ -271,8 +275,8 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
                 {r.icon}
               </div>
               <div className="flex-1">
-                <div className="font-bold text-sm text-slate-900 uppercase tracking-wide">{r.label}</div>
-                <div className="text-xs text-slate-600 mt-1">{r.subtitle}</div>
+                <div className="font-bold text-sm text-slate-900 uppercase tracking-wide">{t(r.label)}</div>
+                <div className="text-xs text-slate-600 mt-1">{t(r.subtitle)}</div>
               </div>
               <ChevronRight className="w-5 h-5 text-slate-400" />
             </button>
@@ -289,7 +293,7 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
           <Field label="Password" type="password" value={creds.password} onChange={(v) => setCreds({ ...creds, password: v })} placeholder="Min 6 Characters" required />
           <button type="submit"
             className="mt-4 w-full py-2.5 bg-[#0056b3] hover:bg-blue-800 text-white rounded-sm text-md font-bold uppercase tracking-wider border border-transparent">
-            Continue
+            {t("Continue")}
           </button>
         </form>
       )}
@@ -347,13 +351,13 @@ export default function SwasthyaAuth({ onClose }: SwasthyaAuthProps = {}) {
 
           <button type="submit" disabled={loading}
             className="mt-4 w-full py-2.5 bg-[#0056b3] hover:bg-blue-800 disabled:bg-slate-400 text-white rounded-sm text-md font-bold uppercase tracking-wider border border-transparent">
-            {loading ? "Registering..." : "Submit Registration"}
+            {loading ? t("Registering...") : t("Submit Registration")}
           </button>
         </form>
       )}
 
       <div className="mt-6 pt-4 border-t border-slate-200 text-center text-xs text-slate-500">
-        Secured by Government Standards Policy.
+        {t("Secured by Government Standards Policy.")}
       </div>
     </div>
   );

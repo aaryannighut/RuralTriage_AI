@@ -4,6 +4,7 @@ import {
   AlertTriangle, MapPin, Phone, BadgeCheck, Stethoscope, Build, Building2,
   Clock, IndianRupee, FileCheck2, Upload, Eye
 } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 type Specialty =
   | "General Physician" | "Cardiologist" | "Neurologist" | "Dermatologist"
@@ -56,6 +57,7 @@ const emptyForm = (): Omit<Doctor, "id"> => ({
 });
 
 export function DoctorAdmin() {
+  const { t } = useLanguage();
   const [doctors, setDoctors] = useState<Doctor[]>(SEED);
   const [search, setSearch] = useState("");
   const [filterSpec, setFilterSpec] = useState<"All" | Specialty>("All");
@@ -100,27 +102,27 @@ export function DoctorAdmin() {
       {/* Header */}
       <div className="border border-slate-300 bg-slate-50 p-6 flex flex-col md:flex-row justify-between gap-4">
         <div>
-           <h1 className="text-2xl font-bold uppercase tracking-tight">Physician Registry</h1>
-           <p className="text-sm font-semibold text-slate-600 mt-1 uppercase tracking-wide">Authorized Personnel & Doctor Index</p>
+           <h1 className="text-2xl font-bold uppercase tracking-tight">{t("Physician Registry")}</h1>
+           <p className="text-sm font-semibold text-slate-600 mt-1 uppercase tracking-wide">{t("Authorized Personnel & Doctor Index")}</p>
         </div>
         <button onClick={openAdd} className="bg-[#0056b3] text-white px-5 py-2 font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-blue-800 self-start">
-           <Plus className="w-4 h-4"/> Add Doctor
+           <Plus className="w-4 h-4"/> {t("Add Doctor")}
         </button>
       </div>
 
       {/* Delete Dialog */}
       {deleteConfirm !== null && (
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white border-2 border-red-500 w-full max-w-sm">
+            <div className="bg-white border-2 border-red-500 w-full max-sm:max-w-sm">
                <div className="bg-red-500 p-3 text-white font-bold uppercase flex items-center gap-2">
-                 <AlertTriangle className="w-5 h-5"/> Terminate Record
+                 <AlertTriangle className="w-5 h-5"/> {t("Terminate Record")}
                </div>
                <div className="p-4 font-semibold text-slate-800">
-                  Are you absolutely certain you wish to purge this clinical record from the database?
+                  {t("Are you absolutely certain you wish to purge this clinical record from the database?")}
                </div>
                <div className="flex border-t border-slate-300 bg-slate-50">
-                  <button onClick={() => setDeleteConfirm(null)} className="flex-1 p-3 font-bold uppercase tracking-wide border-r border-slate-300 hover:bg-slate-200">Cancel</button>
-                  <button onClick={handleDelete} className="flex-1 p-3 font-bold uppercase tracking-wide text-red-600 hover:bg-red-100">Purge</button>
+                  <button onClick={() => setDeleteConfirm(null)} className="flex-1 p-3 font-bold uppercase tracking-wide border-r border-slate-300 hover:bg-slate-200">{t("Cancel")}</button>
+                  <button onClick={handleDelete} className="flex-1 p-3 font-bold uppercase tracking-wide text-red-600 hover:bg-red-100">{t("Purge")}</button>
                </div>
             </div>
          </div>
@@ -131,7 +133,7 @@ export function DoctorAdmin() {
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
             <div className="bg-white border-2 border-[#0056b3] w-full max-w-3xl my-8">
                <div className="bg-[#0056b3] p-4 text-white font-bold uppercase flex justify-between items-center">
-                  <span>{editingId ? "Modify Practitioner Record" : "New Practitioner Inductive Form"}</span>
+                  <span>{editingId ? t("Modify Practitioner Record") : t("New Practitioner Inductive Form")}</span>
                   <button onClick={() => setModalOpen(false)}><X className="w-5 h-5 hover:text-red-300"/></button>
                </div>
                <DoctorForm initial={formInitial} onSave={(d) => handleSave(new Event("submit") as any, d)} onCancel={() => setModalOpen(false)} />
@@ -147,18 +149,18 @@ export function DoctorAdmin() {
                <input 
                   value={search} onChange={e => setSearch(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 border border-slate-300 bg-white text-sm focus:outline-none focus:border-[#0056b3] uppercase"
-                  placeholder="QUERY REGISTRY..."
+                  placeholder={t("QUERY REGISTRY...")}
                />
             </div>
             <select value={filterSpec} onChange={e => setFilterSpec(e.target.value as "All" | Specialty)} className="w-full sm:w-auto p-2 border border-slate-300 bg-white text-sm focus:outline-none uppercase font-bold">
-               <option value="All">All Disciplines</option>
-               {SPECIALTIES.map(s => <option key={s}>{s}</option>)}
+               <option value="All">{t("All Disciplines")}</option>
+               {SPECIALTIES.map(s => <option key={s} value={s}>{t(s)}</option>)}
             </select>
             <select value={filterAvail} onChange={e => setFilterAvail(e.target.value as "All" | Availability)} className="w-full sm:w-auto p-2 border border-slate-300 bg-white text-sm focus:outline-none uppercase font-bold">
-               <option value="All">All Availabilities</option>
-               <option>Available</option>
-               <option>Busy</option>
-               <option>On Leave</option>
+               <option value="All">{t("All Availabilities")}</option>
+               <option value="Available">{t("Available")}</option>
+               <option value="Busy">{t("Busy")}</option>
+               <option value="On Leave">{t("On Leave")}</option>
             </select>
          </div>
       </div>
@@ -168,43 +170,43 @@ export function DoctorAdmin() {
          <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-[#e6f2ff] border-b border-slate-300">
                <tr>
-                  <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">Practitioner</th>
-                  <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">Specialty / Loc</th>
-                  <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">Status</th>
-                  <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">Fee / Cred</th>
-                  <th className="p-3 uppercase font-bold text-xs text-[#0056b3] text-right">Ops</th>
+                  <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">{t("Practitioner")}</th>
+                  <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">{t("Specialty / Loc")}</th>
+                  <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">{t("Status")}</th>
+                  <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">{t("Fee / Cred")}</th>
+                  <th className="p-3 uppercase font-bold text-xs text-[#0056b3] text-right">{t("Ops")}</th>
                </tr>
             </thead>
             <tbody className="divide-y divide-slate-300">
                {filtered.map(d => (
                   <tr key={d.id} className="hover:bg-slate-50">
                      <td className="p-3 border-r border-slate-200">
-                        <div className="font-bold text-slate-900 text-base">{d.name} {d.verified && <BadgeCheck className="w-4 h-4 text-[#0056b3] inline" />}</div>
-                        <div className="text-xs text-slate-600 font-bold uppercase mt-1">{d.qualification} • {d.experience}YRS</div>
+                        <div className="font-bold text-slate-900 text-base">{t(d.name)} {d.verified && <BadgeCheck className="w-4 h-4 text-[#0056b3] inline" />}</div>
+                        <div className="text-xs text-slate-600 font-bold uppercase mt-1">{t(d.qualification)} • {d.experience} {t("YRS")}</div>
                      </td>
                      <td className="p-3 border-r border-slate-200">
-                        <span className="font-bold uppercase text-slate-700 bg-slate-200 px-2 py-0.5 text-xs inline-block mb-1">{d.specialty}</span>
-                        <div className="text-xs font-semibold text-slate-600 mt-1"><Building2 className="w-3 h-3 inline pb-0.5 text-[#0056b3]"/> {d.hospital} ({d.city})</div>
+                        <span className="font-bold uppercase text-slate-700 bg-slate-200 px-2 py-0.5 text-xs inline-block mb-1">{t(d.specialty)}</span>
+                        <div className="text-xs font-semibold text-slate-600 mt-1"><Building2 className="w-3 h-3 inline pb-0.5 text-[#0056b3]"/> {t(d.hospital)} ({t(d.city)})</div>
                      </td>
                      <td className="p-3 border-r border-slate-200">
                         <span className={`px-2 py-1 text-[10px] font-bold border uppercase tracking-wider ${availabilityStyles[d.availability]}`}>
-                          {d.availability}
+                          {t(d.availability)}
                         </span>
                      </td>
                      <td className="p-3 border-r border-slate-200">
                         <div className="font-bold text-slate-900">₹{d.fee}</div>
                         <div className="text-[10px] font-bold uppercase text-slate-500 mt-1">
-                           {d.certificate ? <span className="text-green-700"><FileCheck2 className="w-3 h-3 inline"/> CERT ALIVE</span> : <span className="text-red-600">UNAPPROVED</span>}
+                           {d.certificate ? <span className="text-green-700"><FileCheck2 className="w-3 h-3 inline"/> {t("CERT ALIVE")}</span> : <span className="text-red-600">{t("UNAPPROVED")}</span>}
                         </div>
                      </td>
                      <td className="p-3 text-right">
-                        <button onClick={() => openEdit(d)} className="p-2 border border-slate-300 hover:bg-slate-100 text-slate-700 inline-block mr-2 font-bold uppercase text-[10px]">EDIT</button>
-                        <button onClick={() => setDeleteConfirm(d.id)} className="p-2 border border-red-300 hover:bg-red-50 text-red-600 inline-block font-bold uppercase text-[10px]">RM</button>
+                        <button onClick={() => openEdit(d)} className="p-2 border border-slate-300 hover:bg-slate-100 text-slate-700 inline-block mr-2 font-bold uppercase text-[10px]">{t("EDIT")}</button>
+                        <button onClick={() => setDeleteConfirm(d.id)} className="p-2 border border-red-300 hover:bg-red-50 text-red-600 inline-block font-bold uppercase text-[10px]">{t("RM")}</button>
                      </td>
                   </tr>
                ))}
                {filtered.length === 0 && (
-                  <tr><td colSpan={5} className="p-8 text-center text-slate-500 font-bold uppercase">No records match query.</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-slate-500 font-bold uppercase">{t("No records match query.")}</td></tr>
                )}
             </tbody>
          </table>
@@ -216,6 +218,7 @@ export function DoctorAdmin() {
 // ── Shared Subcomponents ──────────────────────────────────────────────────────
 
 function DoctorForm({ initial, onSave, onCancel }: { initial: Omit<Doctor, "id">, onSave: (d: Omit<Doctor, "id">) => void, onCancel: () => void }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState(initial);
   const f = <K extends keyof Omit<Doctor, "id">>(k: K, v: Omit<Doctor, "id">[K]) => setForm(p => ({ ...p, [k]: v }));
   const ic = "w-full p-2 border border-slate-300 text-sm focus:outline-none focus:border-[#0056b3] uppercase";
@@ -225,54 +228,58 @@ function DoctorForm({ initial, onSave, onCancel }: { initial: Omit<Doctor, "id">
     <form onSubmit={() => onSave(form)} className="p-0">
       <div className="p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className={lc}>Legal Name *</label><input required value={form.name} onChange={e => f("name", e.target.value)} className={ic} /></div>
-            <div><label className={lc}>Qualification *</label><input required value={form.qualification} onChange={e => f("qualification", e.target.value)} className={ic} /></div>
+            <div><label className={lc}>{t("Legal Name")} *</label><input required value={form.name} onChange={e => f("name", e.target.value)} className={ic} /></div>
+            <div><label className={lc}>{t("Qualification")} *</label><input required value={form.qualification} onChange={e => f("qualification", e.target.value)} className={ic} /></div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-               <label className={lc}>Primary Discipline</label>
+               <label className={lc}>{t("Primary Discipline")}</label>
                <select required value={form.specialty} onChange={e => f("specialty", e.target.value as Specialty)} className={ic}>
-                  {SPECIALTIES.map(s => <option key={s}>{s}</option>)}
+                  {SPECIALTIES.map(s => <option key={s} value={s}>{t(s)}</option>)}
                </select>
             </div>
-            <div><label className={lc}>Yrs Exp</label><input required type="number" value={form.experience} onChange={e => f("experience", Number(e.target.value))} className={ic} /></div>
-            <div><label className={lc}>Fee (₹)</label><input required type="number" value={form.fee} onChange={e => f("fee", Number(e.target.value))} className={ic} /></div>
+            <div><label className={lc}>{t("Yrs Exp")}</label><input required type="number" value={form.experience} onChange={e => f("experience", Number(e.target.value))} className={ic} /></div>
+            <div><label className={lc}>{t("Fee (₹)")}</label><input required type="number" value={form.fee} onChange={e => f("fee", Number(e.target.value))} className={ic} /></div>
           </div>
 
           <div className="border-t border-slate-300 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className={lc}>City *</label><input required value={form.city} onChange={e => f("city", e.target.value)} className={ic} /></div>
-            <div><label className={lc}>State *</label><input required value={form.state} onChange={e => f("state", e.target.value)} className={ic} /></div>
+            <div><label className={lc}>{t("City")} *</label><input required value={form.city} onChange={e => f("city", e.target.value)} className={ic} /></div>
+            <div><label className={lc}>{t("State")} *</label><input required value={form.state} onChange={e => f("state", e.target.value)} className={ic} /></div>
           </div>
-          <div><label className={lc}>Base Hospital/Clinic *</label><input required value={form.hospital} onChange={e => f("hospital", e.target.value)} className={ic} /></div>
+          <div><label className={lc}>{t("Base Hospital/Clinic")} *</label><input required value={form.hospital} onChange={e => f("hospital", e.target.value)} className={ic} /></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label className={lc}>Contact Tel *</label><input required type="tel" value={form.phone} onChange={e => f("phone", e.target.value)} className={ic} /></div>
-            <div><label className={lc}>Routing Email *</label><input required type="email" value={form.email} onChange={e => f("email", e.target.value)} className={ic} /></div>
+            <div><label className={lc}>{t("Contact Tel")} *</label><input required type="tel" value={form.phone} onChange={e => f("phone", e.target.value)} className={ic} /></div>
+            <div><label className={lc}>{t("Routing Email")} *</label><input required type="email" value={form.email} onChange={e => f("email", e.target.value)} className={ic} /></div>
           </div>
 
           <div className="border-t border-slate-300 pt-4 grid grid-cols-2 gap-4">
             <div>
-               <label className={lc}>Current Status</label>
+               <label className={lc}>{t("Current Status")}</label>
                <select value={form.availability} onChange={e => f("availability", e.target.value as Availability)} className={ic}>
-                 <option>Available</option><option>Busy</option><option>On Leave</option>
+                 <option value="Available">{t("Available")}</option>
+                 <option value="Busy">{t("Busy")}</option>
+                 <option value="On Leave">{t("On Leave")}</option>
                </select>
             </div>
             <div>
-               <label className={lc}>Modality</label>
+               <label className={lc}>{t("Modality")}</label>
                <select value={form.consultMode} onChange={e => f("consultMode", e.target.value as ConsultMode)} className={ic}>
-                 <option>Both</option><option>Video</option><option>In-Person</option>
+                 <option value="Both">{t("Both")}</option>
+                 <option value="Video">{t("Video")}</option>
+                 <option value="In-Person">{t("In-Person")}</option>
                </select>
             </div>
           </div>
 
           <div className="border border-slate-300 p-4 bg-slate-50 flex items-center justify-between">
-             <div className="font-bold text-sm uppercase">Mark as Formally Verified</div>
+             <div className="font-bold text-sm uppercase">{t("Mark as Formally Verified")}</div>
              <input type="checkbox" checked={form.verified} onChange={e => f("verified", e.target.checked)} className="w-5 h-5 accent-[#0056b3]" />
           </div>
       </div>
       
       <div className="bg-slate-100 border-t border-slate-300 p-4 flex gap-4">
-         <button type="button" onClick={onCancel} className="flex-1 p-3 bg-white border border-slate-300 text-slate-800 font-bold uppercase hover:bg-slate-50">Abort</button>
-         <button type="submit" className="flex-1 p-3 bg-[#0056b3] text-white font-bold uppercase hover:bg-blue-800">Commit Record</button>
+         <button type="button" onClick={onCancel} className="flex-1 p-3 bg-white border border-slate-300 text-slate-800 font-bold uppercase hover:bg-slate-50">{t("Abort")}</button>
+         <button type="submit" className="flex-1 p-3 bg-[#0056b3] text-white font-bold uppercase hover:bg-blue-800">{t("Commit Record")}</button>
       </div>
     </form>
   )

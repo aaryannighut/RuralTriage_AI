@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, FileText, IndianRupee, History, LayoutDashboard
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 interface RxItem {
   medicine: string;
@@ -65,6 +66,7 @@ const CATEGORIES: Category[] = [
 ];
 
 export function PharmacistDispensary() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -105,7 +107,7 @@ export function PharmacistDispensary() {
     if (!user.userId) return;
     try {
       const profRes = await fetch(`/pharmacies/user/${user.userId}`);
-      if (!profRes.ok) throw new Error("Pharmacy profile not found.");
+      if (!profRes.ok) throw new Error(t("Pharmacy profile not found."));
       const profData = await profRes.json();
       setProfile(profData);
 
@@ -164,7 +166,7 @@ export function PharmacistDispensary() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
       });
-      if (!res.ok) throw new Error("Failed to update dispensation status.");
+      if (!res.ok) throw new Error(t("Failed to update dispensation status."));
       
       await fetchData();
       setSelectedRx(null);
@@ -275,7 +277,7 @@ export function PharmacistDispensary() {
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
       <Loader2 className="w-10 h-10 animate-spin text-[#0056b3]" />
-      <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Syncing Dispensary Mainframe...</span>
+      <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{t("Syncing Dispensary Mainframe...")}</span>
     </div>
   );
 
@@ -289,18 +291,18 @@ export function PharmacistDispensary() {
             <Building2 className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900">{profile?.store_name}</h1>
+            <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900">{t(profile?.store_name || "")}</h1>
             <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-              <span className="flex items-center gap-1"><ShieldAlert className="w-3 h-3 text-[#0056b3]"/> License: {profile?.license_number}</span>
-              <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-[#0056b3]"/> {profile?.city}, {profile?.state}</span>
+              <span className="flex items-center gap-1"><ShieldAlert className="w-3 h-3 text-[#0056b3]"/> {t("License")}: {profile?.license_number}</span>
+              <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-[#0056b3]"/> {t(profile?.city || "")}, {t(profile?.state || "")}</span>
             </div>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
            <button 
-             onClick={() => alert("Connecting to RuralTriage Help Desk... \n\nEmergency Support: +91-90000-00000")}
-             className="px-4 py-2 bg-[#0056b3] text-white text-[10px] font-black uppercase shadow-md hover:bg-blue-800 transition-all">Support Desk</button>
+             onClick={() => alert(t("Connecting to RuralTriage Help Desk... \n\nEmergency Support: +91-90000-00000"))}
+             className="px-4 py-2 bg-[#0056b3] text-white text-[10px] font-black uppercase shadow-md hover:bg-blue-800 transition-all">{t("Support Desk")}</button>
         </div>
       </div>
 
@@ -315,7 +317,7 @@ export function PharmacistDispensary() {
           <div key={i} className={`bg-white border-l-4 border-slate-600 border border-slate-200 p-4 shadow-sm group hover:shadow-md transition-all`}>
             <div className="flex justify-between items-center">
               <div className="truncate">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t(stat.label)}</p>
                 <div className={`text-xl font-black mt-1 text-slate-900`}>{stat.val}</div>
               </div>
               <stat.icon className={`w-6 h-6 text-slate-100 flex-shrink-0`} />
@@ -336,7 +338,7 @@ export function PharmacistDispensary() {
             className={`flex-1 py-4 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? "bg-slate-50 text-[#0056b3] border-b-2 border-[#0056b3]" : "text-slate-400 hover:text-slate-600"}`}
           >
             <tab.icon className="w-4 h-4" />
-            {tab.label}
+            {t(tab.label)}
           </button>
         ))}
       </div>
@@ -347,8 +349,8 @@ export function PharmacistDispensary() {
           {/* Left Column: List */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-slate-100 p-4 border border-slate-300 flex items-center justify-between">
-               <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2"><div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"/> Incoming Queue</h2>
-               <span className="text-[9px] font-black bg-white border border-slate-300 px-2 py-0.5">{rxList.length} New</span>
+               <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-2"><div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"/> {t("Incoming Queue")}</h2>
+               <span className="text-[9px] font-black bg-white border border-slate-300 px-2 py-0.5">{rxList.length} {t("New")}</span>
             </div>
             
             <div className="space-y-3">
@@ -369,7 +371,7 @@ export function PharmacistDispensary() {
               {rxList.length === 0 && (
                 <div className="py-20 bg-white border border-dash border-slate-200 text-center">
                   <ClipboardList className="w-8 h-8 mx-auto text-slate-200 mb-2" />
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No Active Requisitions</p>
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t("No Active Requisitions")}</p>
                 </div>
               )}
             </div>
@@ -380,18 +382,18 @@ export function PharmacistDispensary() {
             {!selectedRx ? (
               <div className="h-full bg-slate-50 border border-slate-200 flex flex-col items-center justify-center p-12 text-center text-slate-400">
                 <LayoutDashboard className="w-16 h-16 mb-4 opacity-10" />
-                <h3 className="text-xl font-black uppercase tracking-tighter">Selection Required</h3>
-                <p className="text-xs font-bold uppercase tracking-widest mt-2 max-w-xs leading-relaxed">Select an incoming digital prescription from the queue to initiate dispensation workflow.</p>
+                <h3 className="text-xl font-black uppercase tracking-tighter">{t("Selection Required")}</h3>
+                <p className="text-xs font-bold uppercase tracking-widest mt-2 max-w-xs leading-relaxed">{t("Select an incoming digital prescription from the queue to initiate dispensation workflow.")}</p>
               </div>
             ) : (
               <div className="bg-white border-2 border-slate-900 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none font-black text-6xl transform rotate-12">DISPENSARY</div>
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none font-black text-6xl transform rotate-12">{t("DISPENSARY")}</div>
                 
                 {/* Rx Header */}
                 <div className="bg-slate-900 text-white p-6 flex justify-between items-start">
                   <div>
-                    <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">Medical Prescription</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-2">Authenticated Digital Order • Patient Ref: P-{selectedRx.patient_id}</p>
+                    <h2 className="text-2xl font-black uppercase tracking-tighter leading-none">{t("Medical Prescription")}</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-2">{t("Authenticated Digital Order • Patient Ref")}: P-{selectedRx.patient_id}</p>
                   </div>
                   <button onClick={() => setSelectedRx(null)} className="p-2 hover:bg-white/10 transition-colors"><X className="w-5 h-5"/></button>
                 </div>
@@ -399,12 +401,12 @@ export function PharmacistDispensary() {
                 <div className="p-8 space-y-8">
                   <div className="grid md:grid-cols-2 gap-8 border-b border-slate-100 pb-8 print:hidden">
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Prescribing Clinician</p>
-                      <p className="text-lg font-black uppercase text-slate-900">{selectedRx.doctor_name || selectedRx.issued_by}</p>
-                      <p className="text-[10px] font-bold text-[#0056b3] uppercase mt-0.5">Verified Medical Practitioner</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t("Prescribing Clinician")}</p>
+                      <p className="text-lg font-black uppercase text-slate-900">{t(selectedRx.doctor_name || selectedRx.issued_by)}</p>
+                      <p className="text-[10px] font-bold text-[#0056b3] uppercase mt-0.5">{t("Verified Medical Practitioner")}</p>
                     </div>
                     <div className="md:text-right">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Issue Timestamp</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t("Issue Timestamp")}</p>
                       <p className="text-sm font-bold uppercase text-slate-700">{new Date(selectedRx.issued_at).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })}</p>
                     </div>
                   </div>
@@ -412,27 +414,27 @@ export function PharmacistDispensary() {
                   {preparingOrder ? (
                      <div className="border border-slate-200 bg-white">
                         <div className="bg-slate-100 p-4 border-b border-slate-200 flex justify-between items-center print:hidden">
-                           <h4 className="text-[11px] font-black uppercase tracking-widest text-[#0056b3]">Order Preparation Details</h4>
-                           <button onClick={() => setPreparingOrder(false)} className="text-[9px] font-black uppercase text-slate-500 hover:text-slate-900 border border-slate-300 px-3 py-1 bg-white">Cancel Prep</button>
+                           <h4 className="text-[11px] font-black uppercase tracking-widest text-[#0056b3]">{t("Order Preparation Details")}</h4>
+                           <button onClick={() => setPreparingOrder(false)} className="text-[9px] font-black uppercase text-slate-500 hover:text-slate-900 border border-slate-300 px-3 py-1 bg-white">{t("Cancel Prep")}</button>
                         </div>
                         <div className="divide-y divide-slate-100" id="printable-invoice">
                            <div className="hidden print:block p-8 border-b-4 border-[#0056b3]">
-                               <h1 className="text-3xl font-black uppercase tracking-tighter text-slate-900">{profile?.store_name}</h1>
-                               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Official Medical Retail Invoice</p>
+                               <h1 className="text-3xl font-black uppercase tracking-tighter text-slate-900">{t(profile?.store_name || "")}</h1>
+                               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{t("Official Medical Retail Invoice")}</p>
                                <div className="mt-6 text-[10px] font-black uppercase text-slate-700 flex justify-between">
-                                  <span>Patient Ref: P-{selectedRx.patient_id}</span>
-                                  <span>Date: {new Date().toLocaleDateString()}</span>
+                                  <span>{t("Patient Ref")}: P-{selectedRx.patient_id}</span>
+                                  <span>{t("Date")}: {new Date().toLocaleDateString()}</span>
                                </div>
                            </div>
                            {orderItems.map((item, idx) => (
                               <div key={idx} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:bg-slate-50 transition-colors print:p-4 print:border-b">
                                  <div>
-                                    <p className="text-base font-black uppercase text-slate-900">{item.name}</p>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Available Stock: {item.stock} Units</p>
+                                    <p className="text-base font-black uppercase text-slate-900">{t(item.name)}</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{t("Available Stock")}: {item.stock} {t("Units")}</p>
                                  </div>
                                  <div className="flex gap-6 items-center print:hidden">
                                      <div className="flex flex-col items-center">
-                                         <label className="text-[8px] font-black tracking-widest text-slate-400 uppercase mb-1">Dispense Amount</label>
+                                         <label className="text-[8px] font-black tracking-widest text-slate-400 uppercase mb-1">{t("Dispense Amount")}</label>
                                          <div className="flex items-center border border-slate-300 bg-white shadow-inner">
                                             <button onClick={() => updateOrderItemQty(idx, item.quantity - 1)} className="px-3 py-2 text-slate-400 hover:bg-slate-100 font-bold">-</button>
                                             <input type="number" min="0" max={item.stock} value={item.quantity} onChange={(e) => updateOrderItemQty(idx, parseInt(e.target.value) || 0)} className="w-12 py-2 text-center font-black outline-none bg-transparent" />
@@ -440,26 +442,26 @@ export function PharmacistDispensary() {
                                          </div>
                                      </div>
                                      <div className="text-right w-24">
-                                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-widest">Subtotal</p>
+                                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-widest">{t("Subtotal")}</p>
                                          <p className="text-base font-black text-[#0056b3]">₹{item.price * item.quantity}</p>
                                      </div>
                                  </div>
                                  <div className="hidden print:block text-right">
-                                     <p className="text-[10px] font-black uppercase text-slate-500">Qty: {item.quantity}</p>
+                                     <p className="text-[10px] font-black uppercase text-slate-500">{t("Qty")}: {item.quantity}</p>
                                      <p className="text-base font-black text-slate-900 mt-1">₹{item.price * item.quantity}</p>
                                  </div>
                               </div>
                            ))}
                            <div className="bg-slate-50 print:bg-white p-6 border-t-2 border-slate-200 flex justify-between items-center print:mt-4">
                               <div>
-                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Total Order Billed</p>
+                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">{t("Total Order Billed")}</p>
                                  <div className="flex items-center text-4xl font-black text-[#0056b3] tracking-tighter">
                                     <IndianRupee className="w-8 h-8" strokeWidth={3} />
                                     {orderItems.reduce((acc, i) => acc + (i.price * i.quantity), 0)}
                                  </div>
                               </div>
                               <button onClick={printInvoice} className="print:hidden px-4 py-3 border border-slate-300 bg-white flex items-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-100 transition-colors">
-                                  <FileText className="w-4 h-4" /> Save Invoice PDF
+                                  <FileText className="w-4 h-4" /> {t("Save Invoice PDF")}
                               </button>
                            </div>
                         </div>
@@ -468,7 +470,7 @@ export function PharmacistDispensary() {
                      <>
                         <div className="print:hidden">
                           <h4 className="text-[11px] font-black uppercase tracking-widest text-[#0056b3] mb-4 flex items-center gap-2">
-                             <Pill className="w-4 h-4" /> Itemized Medication Request
+                             <Pill className="w-4 h-4" /> {t("Itemized Medication Request")}
                           </h4>
                           <div className="divide-y-2 divide-slate-50 border-y border-slate-100">
                             {selectedRx.medicines.map((item, id) => {
@@ -478,15 +480,15 @@ export function PharmacistDispensary() {
                               <div key={id} className="py-5 flex justify-between group">
                                 <div>
                                   <div className="flex items-center gap-2">
-                                     <p className="text-base font-black uppercase text-slate-900">{item.medicine}</p>
-                                     <span className="text-[9px] font-black bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 tracking-widest">X{item.duration || "Course"}</span>
+                                     <p className="text-base font-black uppercase text-slate-900">{t(item.medicine)}</p>
+                                     <span className="text-[9px] font-black bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 tracking-widest">X{t(item.duration || "Course")}</span>
                                   </div>
-                                  <p className="text-[10px] font-bold text-slate-500 uppercase mt-1 tracking-wide">{item.dosage} • {item.notes}</p>
+                                  <p className="text-[10px] font-bold text-slate-500 uppercase mt-1 tracking-wide">{t(item.dosage)} • {t(item.notes)}</p>
                                 </div>
                                 <div className="text-right space-y-2">
                                    <p className="text-sm font-black text-slate-900">₹{match?.price || "—"}</p>
                                    <div className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 border inline-block shadow-sm ${isAvail ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-600 border-red-200"}`}>
-                                       {isAvail ? "AVAILABLE IN STOCK" : "OUT OF STOCK"}
+                                       {isAvail ? t("AVAILABLE IN STOCK") : t("OUT OF STOCK")}
                                    </div>
                                 </div>
                               </div>
@@ -496,7 +498,7 @@ export function PharmacistDispensary() {
 
                         <div className="bg-slate-50 p-6 border-l-8 border-[#0056b3] flex justify-between items-center group print:hidden">
                           <div>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Est. Dispensation Cost</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">{t("Est. Dispensation Cost")}</p>
                             <div className="flex items-center text-4xl font-black text-[#0056b3] tracking-tighter">
                                <IndianRupee className="w-8 h-8" strokeWidth={3} />
                                {calculateBill(selectedRx.medicines)}
@@ -513,21 +515,21 @@ export function PharmacistDispensary() {
                     {selectedRx.status === "pending" ? (
                       <>
                         <button onClick={() => handleUpdateStatus(selectedRx.id, "accepted")} disabled={processingStatus} className="flex-1 py-4 bg-[#0056b3] text-white font-black uppercase tracking-[0.2em] text-xs shadow-xl hover:bg-blue-800 transition-all flex justify-center items-center gap-2">
-                           {processingStatus ? <Loader2 className="animate-spin w-4 h-4"/> : "Accept Prescription"}
+                           {processingStatus ? <Loader2 className="animate-spin w-4 h-4"/> : t("Accept Prescription")}
                         </button>
                         <button onClick={() => handleUpdateStatus(selectedRx.id, "rejected")} disabled={processingStatus} className="px-8 py-4 bg-white border-2 border-red-600 text-red-600 font-black uppercase tracking-[0.2em] text-xs hover:bg-red-50 transition-all">
-                           Reject - Out of Stock
+                           {t("Reject - Out of Stock")}
                         </button>
                       </>
                     ) : preparingOrder ? (
                         <button onClick={finalizeDispensation} disabled={processingStatus} className="flex-1 py-4 bg-green-600 text-white font-black uppercase tracking-[0.2em] text-xs shadow-xl hover:bg-green-700 hover:shadow-2xl transition-all flex justify-center items-center gap-2">
                            {processingStatus ? <Loader2 className="animate-spin w-4 h-4"/> : <CheckCircle2 className="w-5 h-5"/>}
-                           Process Bill & Commit Dispensation
+                           {t("Process Bill & Commit Dispensation")}
                         </button>
                     ) : (
                         <button onClick={startOrderPrep} className="flex-1 py-4 bg-yellow-400 text-slate-900 font-black uppercase tracking-[0.2em] text-xs shadow-lg hover:shadow-xl hover:bg-yellow-500 transition-all flex justify-center items-center gap-2 border border-yellow-500">
                            <LayoutDashboard className="w-5 h-5"/>
-                           Prepare Order System
+                           {t("Prepare Order System")}
                         </button>
                     )}
                   </div>

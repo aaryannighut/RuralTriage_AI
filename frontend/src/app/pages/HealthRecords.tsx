@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FileText, Upload, AlertCircle, Download, Trash2, Eye, Image as ImageIcon, Loader2, ShieldAlert } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 interface HealthRecordItem {
   id: string; type: string; title: string; date: string; file: string; file_url?: string; public_id?: string; uploaded_at?: string;
@@ -39,6 +40,7 @@ function inferRecordType(fileName: string): string {
 }
 
 export function HealthRecords() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [selectedTab, setSelectedTab] = useState<"records" | "ai-diagnosis">("records");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -64,16 +66,16 @@ export function HealthRecords() {
     const fetchRecords = async () => {
       const activeUserId = user?.userId || (user as any)?.id;
       if (!activeUserId) {
-        setRecordError("Authentication Fault: Patient identity not synchronized. Please re-login.");
+        setRecordError(t("Authentication Fault: Patient identity not synchronized. Please re-login."));
         setRecordsLoading(false);
         return;
       }
       try {
         const res = await fetch(`/patients/user/${activeUserId}`);
-        if (!res.ok) throw new Error("Failed to synchronize health repository from master mainframe.");
+        if (!res.ok) throw new Error(t("Failed to synchronize health repository from master mainframe."));
         const data: PatientData = await res.json();
         setPatient(data); setRecords(normalizeRecords(data.health_records));
-      } catch (err) { setRecordError(err instanceof Error ? err.message : "Network failure"); }
+      } catch (err) { setRecordError(err instanceof Error ? err.message : t("Network failure")); }
       finally { setRecordsLoading(false); }
     };
     fetchRecords();
@@ -102,14 +104,14 @@ export function HealthRecords() {
 
   const handleAddRecord = async () => {
     if (!recordFile || !recordTitle.trim()) {
-      setRecordError("Missing file or title for repository upload."); return;
+      setRecordError(t("Missing file or title for repository upload.")); return;
     }
     setRecordSaving(true); setRecordError(""); setRecordSuccess("");
     try {
       const uploadForm = new FormData(); uploadForm.append("file", recordFile);
       const res = await fetch("/health-records/upload", { method: "POST", body: uploadForm });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || "Remote transmission failed");
+      if (!res.ok || !data.success) throw new Error(data.error || t("Remote transmission failed"));
 
       if (data.resource_type === "local") setIsSandboxMode(true);
 
@@ -120,20 +122,20 @@ export function HealthRecords() {
       };
 
       await saveRecordsToBackend([newRecord, ...records]);
-      setRecordSuccess(data.resource_type === "local" ? "Record accepted into Local Sandbox Repository." : "Record accepted into official repository.");
+      setRecordSuccess(data.resource_type === "local" ? t("Record accepted into Local Sandbox Repository.") : t("Record accepted into official repository."));
       setRecordFile(null); setRecordTitle(""); setRecordType("Medical Record");
-    } catch (err) { setRecordError(err instanceof Error ? err.message : "Error saving"); }
+    } catch (err) { setRecordError(err instanceof Error ? err.message : t("Error saving")); }
     finally { setRecordSaving(false); }
   };
 
   const handleDeleteRecord = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this record? This action cannot be undone.")) return;
+    if (!window.confirm(t("Are you sure you want to delete this record? This action cannot be undone."))) return;
     
     setRecordSaving(true); setRecordError(""); setRecordSuccess("");
     try {
       await saveRecordsToBackend(records.filter((r) => r.id !== id));
-      setRecordSuccess("Record successfully expunged.");
-    } catch (err) { setRecordError(err instanceof Error ? err.message : "Error deleting"); }
+      setRecordSuccess(t("Record successfully expunged."));
+    } catch (err) { setRecordError(err instanceof Error ? err.message : t("Error deleting")); }
     finally { setRecordSaving(false); }
   };
 
@@ -158,19 +160,19 @@ export function HealthRecords() {
       fd.append("custom_prompt", "Explain this medical report in very easy language.");
       const res = await fetch("/health-records/analyze", { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || "Analysis engine failure");
-      setAiExplanation(data.explanation || "No explanation returned");
+      if (!res.ok || !data.success) throw new Error(data.error || t("Analysis engine failure"));
+      setAiExplanation(data.explanation || t("No explanation returned"));
       setAiTimestamp(data.timestamp || new Date().toISOString());
       setShowAIResults(true);
-    } catch (err) { setAiError(err instanceof Error ? err.message : "Fatal error"); setShowAIResults(false); }
+    } catch (err) { setAiError(err instanceof Error ? err.message : t("Fatal error")); setShowAIResults(false); }
     finally { setIsAnalyzing(false); }
   };
 
   if (!user.userId) return (
     <div className="w-full max-w-4xl mx-auto p-6 mt-12 bg-red-50 border border-red-300 flex items-center flex-col text-center">
        <ShieldAlert className="w-12 h-12 text-red-700 mb-3" />
-       <h2 className="text-xl font-bold text-red-900 uppercase">Unauthorized Access</h2>
-       <p className="text-red-800 font-semibold mt-2">Authentication required to manage medical records.</p>
+       <h2 className="text-xl font-bold text-red-900 uppercase">{t("Unauthorized Access")}</h2>
+       <p className="text-red-800 font-semibold mt-2">{t("Authentication required to manage medical records.")}</p>
     </div>
   );
 
@@ -179,8 +181,8 @@ export function HealthRecords() {
       
       <div className="border border-slate-300 bg-slate-50 p-6 flex flex-col md:flex-row justify-between gap-4">
         <div>
-           <h1 className="text-2xl font-bold uppercase tracking-tight">E-Health Repository</h1>
-           <p className="text-sm font-semibold text-slate-600 mt-1 uppercase tracking-wide">Manage central medical documents & AI diagnostics</p>
+           <h1 className="text-2xl font-bold uppercase tracking-tight">{t("E-Health Repository")}</h1>
+           <p className="text-sm font-semibold text-slate-600 mt-1 uppercase tracking-wide">{t("Manage central medical documents & AI diagnostics")}</p>
         </div>
       </div>
 
@@ -191,14 +193,14 @@ export function HealthRecords() {
         <div className="p-4 bg-[#e6f2ff] border border-blue-200 flex items-center gap-3">
           <Upload className="w-5 h-5 text-[#0056b3]" />
           <div className="text-xs font-bold text-[#0056b3] uppercase tracking-wide">
-            Sandbox Mode Active: documents are being stored in the local server repository due to missing Cloudinary configuration.
+            {t("Sandbox Mode Active: documents are being stored in the local server repository due to missing Cloudinary configuration.")}
           </div>
         </div>
       )}
 
       <div className="flex bg-white border border-slate-300">
-         <button onClick={() => setSelectedTab("records")} className={`flex-1 p-4 font-bold uppercase tracking-wide border-r border-slate-300 transition-none ${selectedTab === "records" ? "bg-[#0056b3] text-white" : "text-slate-600 hover:bg-slate-100"}`}>Registry Vault</button>
-         <button onClick={() => setSelectedTab("ai-diagnosis")} className={`flex-1 p-4 font-bold uppercase tracking-wide transition-none ${selectedTab === "ai-diagnosis" ? "bg-[#0056b3] text-white" : "text-slate-600 hover:bg-slate-100"}`}>AI Diagnostic Scan</button>
+         <button onClick={() => setSelectedTab("records")} className={`flex-1 p-4 font-bold uppercase tracking-wide border-r border-slate-300 transition-none ${selectedTab === "records" ? "bg-[#0056b3] text-white" : "text-slate-600 hover:bg-slate-100"}`}>{t("Registry Vault")}</button>
+         <button onClick={() => setSelectedTab("ai-diagnosis")} className={`flex-1 p-4 font-bold uppercase tracking-wide transition-none ${selectedTab === "ai-diagnosis" ? "bg-[#0056b3] text-white" : "text-slate-600 hover:bg-slate-100"}`}>{t("AI Diagnostic Scan")}</button>
       </div>
 
       {selectedTab === "records" ? (
@@ -207,74 +209,73 @@ export function HealthRecords() {
           {/* Uploader Block */}
           <div className="border border-slate-300 bg-white">
              <div className="bg-slate-100 border-b border-slate-300 p-4">
-               <h2 className="font-bold uppercase tracking-wide text-slate-900">Upload Transmission</h2>
+               <h2 className="font-bold uppercase tracking-wide text-slate-900">{t("Upload Transmission")}</h2>
              </div>
              <div className="p-4 space-y-4">
                <label className="block border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center hover:bg-slate-100 hover:border-[#0056b3] cursor-pointer">
                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleRecordFileChange} className="hidden" />
                  <Upload className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                 <p className="font-bold text-sm text-[#0056b3] uppercase">{recordFile ? recordFile.name : "Select File"}</p>
-                 <p className="text-xs font-semibold text-slate-500 mt-1 uppercase">PDF, JPG, PNG (Max 10MB)</p>
+                 <p className="font-bold text-sm text-[#0056b3] uppercase">{recordFile ? recordFile.name : t("Select File")}</p>
+                 <p className="text-xs font-semibold text-slate-500 mt-1 uppercase">{t("PDF, JPG, PNG (Max 10MB)")}</p>
                </label>
                
                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Document Title</label>
-                  <input type="text" value={recordTitle} onChange={e => setRecordTitle(e.target.value)} className="w-full border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:border-[#0056b3]" placeholder="e.g. CBC Mar 2026" />
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">{t("Document Title")}</label>
+                  <input type="text" value={recordTitle} onChange={e => setRecordTitle(e.target.value)} className="w-full border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:border-[#0056b3]" placeholder={t("e.g. CBC Mar 2026")} />
                </div>
                
                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Document Type</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">{t("Document Type")}</label>
                   <select value={recordType} onChange={e => setRecordType(e.target.value)} className="w-full border border-slate-300 bg-white p-2 text-sm focus:outline-none focus:border-[#0056b3]">
-                    <option>Medical Record</option>
-                    <option>Prescription</option>
-                    <option>Lab Report</option>
-                    <option>X-Ray</option>
-                    <option>MRI</option>
-                    <option>CT Scan</option>
+                    <option>{t("Medical Record")}</option>
+                    <option>{t("Prescription")}</option>
+                    <option>{t("Lab Report")}</option>
+                    <option>{t("X-Ray")}</option>
+                    <option>{t("MRI")}</option>
+                    <option>{t("CT Scan")}</option>
                   </select>
                </div>
 
                <button onClick={handleAddRecord} disabled={recordSaving} className="w-full p-3 bg-[#0056b3] text-white font-bold uppercase tracking-wider hover:bg-blue-800 disabled:bg-slate-400">
-                  {recordSaving ? "Transmitting..." : "Save to Vault"}
+                  {recordSaving ? t("Transmitting...") : t("Save to Vault")}
                </button>
              </div>
           </div>
 
-          {/* Official Records Table */}
           <div className="border border-slate-300 bg-white">
              <div className="bg-slate-100 border-b border-slate-300 p-4">
-               <h2 className="font-bold uppercase tracking-wide text-slate-900">Official Patient Records</h2>
+               <h2 className="font-bold uppercase tracking-wide text-slate-900">{t("Official Patient Records")}</h2>
              </div>
              
              {recordsLoading ? (
-                <div className="p-8 text-center text-[#0056b3] font-bold uppercase tracking-wider">Accessing Mainframe...</div>
+                <div className="p-8 text-center text-[#0056b3] font-bold uppercase tracking-wider">{t("Accessing Mainframe...")}</div>
              ) : records.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 font-bold uppercase tracking-wider">No records exist in the current scope.</div>
+                <div className="p-8 text-center text-slate-500 font-bold uppercase tracking-wider">{t("No records exist in the current scope.")}</div>
              ) : (
                 <table className="w-full text-left text-sm divide-y divide-slate-300">
                   <thead className="bg-[#e6f2ff] text-[#0056b3] uppercase font-bold text-xs border-b border-slate-300 hidden sm:table-header-group">
                      <tr>
-                        <th className="p-3 border-r border-slate-300">Doc Title / ID</th>
-                        <th className="p-3 border-r border-slate-300">Category</th>
-                        <th className="p-3 border-r border-slate-300">Date Logged</th>
-                        <th className="p-3">Actions</th>
+                        <th className="p-3 border-r border-slate-300">{t("Doc Title / ID")}</th>
+                        <th className="p-3 border-r border-slate-300">{t("Category")}</th>
+                        <th className="p-3 border-r border-slate-300">{t("Date Logged")}</th>
+                        <th className="p-3">{t("Actions")}</th>
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-300 block sm:table-row-group">
                     {records.map(record => (
                        <tr key={record.id} className="hover:bg-slate-50 block sm:table-row border-b sm:border-b-0 border-slate-300">
                          <td className="p-3 border-r border-slate-300 sm:table-cell block">
-                           <div className="font-bold text-slate-900">{record.title}</div>
-                           <div className="text-[10px] text-slate-500 font-mono mt-1">ID: {record.id.slice(0,10)}</div>
+                           <div className="font-bold text-slate-900">{t(record.title)}</div>
+                           <div className="text-[10px] text-slate-500 font-mono mt-1">{t("ID")}: {record.id.slice(0,10)}</div>
                          </td>
                          <td className="p-3 border-r border-slate-300 sm:table-cell block">
-                            <span className="px-2 py-1 bg-slate-200 text-slate-800 text-[10px] font-bold uppercase">{record.type}</span>
+                            <span className="px-2 py-1 bg-slate-200 text-slate-800 text-[10px] font-bold uppercase">{t(record.type)}</span>
                          </td>
                          <td className="p-3 border-r border-slate-300 font-semibold sm:table-cell block text-xs">{record.date}</td>
                          <td className="p-3 sm:table-cell block">
                            <div className="flex gap-2">
                              {record.file_url && (
-                               <a href={record.file_url} target="_blank" rel="noreferrer" className="px-3 py-1 bg-white border border-[#0056b3] text-[#0056b3] text-xs font-bold uppercase hover:bg-[#e6f2ff]">View</a>
+                               <a href={record.file_url} target="_blank" rel="noreferrer" className="px-3 py-1 bg-white border border-[#0056b3] text-[#0056b3] text-xs font-bold uppercase hover:bg-[#e6f2ff]">{t("View")}</a>
                              )}
                              <button onClick={() => handleDeleteRecord(record.id)} disabled={recordSaving} className="px-3 py-1 bg-white border border-red-500 text-red-600 text-xs font-bold uppercase hover:bg-red-50 ml-auto sm:ml-0"><Trash2 className="w-4 h-4"/></button>
                            </div>
@@ -289,7 +290,7 @@ export function HealthRecords() {
       ) : (
         <div className="border border-slate-300 bg-white">
           <div className="bg-slate-100 border-b border-slate-300 p-4">
-             <h2 className="font-bold uppercase tracking-wide text-slate-900">Diagnostic Scanner</h2>
+             <h2 className="font-bold uppercase tracking-wide text-slate-900">{t("Diagnostic Scanner")}</h2>
           </div>
 
           {!uploadedImage ? (
@@ -297,50 +298,48 @@ export function HealthRecords() {
                <label className="block border-2 border-dashed border-slate-300 bg-slate-50 p-12 text-center hover:border-[#0056b3] cursor-pointer max-w-xl mx-auto">
                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                  <ImageIcon className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                 <p className="font-bold text-[#0056b3] uppercase tracking-wide mb-2">Upload Medical Scan (Image)</p>
-                 <p className="text-xs font-semibold text-slate-500 uppercase">Supported: X-Ray, MRI, CT, Dermatology (JPG/PNG)</p>
+                 <p className="font-bold text-[#0056b3] uppercase tracking-wide mb-2">{t("Upload Medical Scan (Image)")}</p>
+                 <p className="text-xs font-semibold text-slate-500 uppercase">{t("Supported: X-Ray, MRI, CT, Dermatology (JPG/PNG)")}</p>
                </label>
              </div>
           ) : (
              <div className="p-6 grid lg:grid-cols-2 gap-6 items-start">
-               {/* Left : Image preview */}
                <div className="border border-slate-300 p-2 bg-slate-50">
-                  <img src={uploadedImage} alt="Scanned image" className="w-full h-auto bg-black max-h-[400px] object-contain border border-slate-300" />
+                  <img src={uploadedImage} alt={t("Scanned image")} className="w-full h-auto bg-black max-h-[400px] object-contain border border-slate-300" />
                   {!showAIResults && (
                     <div className="flex gap-3 mt-4">
                       <button onClick={handleAnalyzeImage} disabled={isAnalyzing} className="flex-1 p-3 bg-[#0056b3] text-white font-bold uppercase tracking-wider hover:bg-blue-800 disabled:bg-slate-400 flex justify-center items-center gap-2">
-                        {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin"/> : "Initiate AI Scan"}
+                        {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin"/> : t("Initiate AI Scan")}
                       </button>
-                      <button onClick={() => setUploadedImage(null)} className="px-4 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase hover:bg-slate-100">Cancel</button>
+                      <button onClick={() => setUploadedImage(null)} className="px-4 py-3 bg-white border border-slate-300 text-slate-700 font-bold uppercase hover:bg-slate-100">{t("Cancel")}</button>
                     </div>
                   )}
                </div>
 
-               {/* Right : Results */}
                {showAIResults && (
                   <div className="space-y-4">
                      {aiError && <div className="p-4 bg-red-50 border border-red-300 text-red-800 text-sm font-bold uppercase tracking-wider">{aiError}</div>}
                      <div className="border border-slate-300">
                         <div className="bg-[#0056b3] text-white p-3 font-bold uppercase tracking-wide text-sm flex justify-between items-center">
-                           <span>Automated Findings</span>
-                           <span className="text-[10px]">Triage Engine V2</span>
+                           <span>{t("Automated Findings")}</span>
+                           <span className="text-[10px]">{t("Triage Engine V2")}</span>
                         </div>
                         <div className="p-4 bg-white text-sm leading-relaxed whitespace-pre-wrap font-medium">
-                           {aiExplanation}
+                           {t(aiExplanation)}
                         </div>
                         <div className="p-3 border-t border-slate-200 bg-slate-50 text-xs font-bold text-slate-500 uppercase flex justify-between">
-                           <span>Scan Time: {new Date(aiTimestamp).toLocaleString()}</span>
+                           <span>{t("Scan Time")}: {new Date(aiTimestamp).toLocaleString()}</span>
                         </div>
                      </div>
                      <div className="p-4 bg-yellow-50 border border-yellow-300 flex items-start gap-3 text-yellow-900">
                         <AlertCircle className="w-6 h-6 shrink-0" />
                         <div className="text-xs font-bold uppercase tracking-widest leading-relaxed">
-                           Non-diagnostic algorithm statement. Findings are preliminary and require verification by an authorized medical practitioner.
+                           {t("Non-diagnostic algorithm statement. Findings are preliminary and require verification by an authorized medical practitioner.")}
                         </div>
                      </div>
                      <div className="flex gap-4">
-                       <button onClick={() => setUploadedImage(null)} className="flex-1 p-3 bg-white border border-[#0056b3] text-[#0056b3] font-bold uppercase hover:bg-[#e6f2ff]">New Scan</button>
-                       <button onClick={() => window.location.href="/talk-to-doctor"} className="flex-1 p-3 bg-[#0056b3] text-white font-bold uppercase hover:bg-blue-800">Forward to Doctor</button>
+                       <button onClick={() => setUploadedImage(null)} className="flex-1 p-3 bg-white border border-[#0056b3] text-[#0056b3] font-bold uppercase hover:bg-[#e6f2ff]">{t("New Scan")}</button>
+                       <button onClick={() => window.location.href="/talk-to-doctor"} className="flex-1 p-3 bg-[#0056b3] text-white font-bold uppercase hover:bg-blue-800">{t("Forward to Doctor")}</button>
                      </div>
                   </div>
                )}

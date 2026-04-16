@@ -2,12 +2,14 @@ import { useState } from "react";
 import { User, Phone, Mail, LogOut, Check, Pencil, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 interface UserProfileProps {
   onClose: () => void;
 }
 
 export default function UserProfile({ onClose }: UserProfileProps) {
+  const { t } = useLanguage();
   const { user, updateProfile, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -44,7 +46,7 @@ export default function UserProfile({ onClose }: UserProfileProps) {
           {initials}
         </div>
         <h2 className="mt-3 text-[1.2rem] font-semibold text-[#1E293B] font-sans">
-          {user.name || "Your Profile"}
+          {user.name || t("Your Profile")}
         </h2>
         <p className="text-[0.82rem] text-[#64748B] font-sans mt-0.5">{user.email}</p>
       </div>
@@ -53,7 +55,7 @@ export default function UserProfile({ onClose }: UserProfileProps) {
       {saved && (
         <div className="mb-4 px-4 py-3 bg-[#A7E3C9]/30 border border-[#A7E3C9] rounded-md text-[0.85rem] text-[#1E293B] font-sans flex items-center gap-2">
           <Check className="w-4 h-4 text-[#4F7DF3]" />
-          Profile updated successfully.
+          {t("Profile updated successfully.")}
         </div>
       )}
 
@@ -63,9 +65,9 @@ export default function UserProfile({ onClose }: UserProfileProps) {
           <div className="flex items-center gap-3 px-4 py-3 bg-[#F8FAFC] rounded-md border border-[rgba(0,0,0,0.06)]">
             <User className="w-4 h-4 text-[#4F7DF3] shrink-0" />
             <div>
-              <p className="text-[0.72rem] text-[#64748B] font-sans">Full Name</p>
+              <p className="text-[0.72rem] text-[#64748B] font-sans">{t("Full Name")}</p>
               <p className="text-[0.9rem] font-medium text-[#1E293B] font-sans">
-                {user.name || <span className="text-[#64748B] italic">Not set</span>}
+                {user.name || <span className="text-[#64748B] italic">{t("Not set")}</span>}
               </p>
             </div>
           </div>
@@ -73,7 +75,7 @@ export default function UserProfile({ onClose }: UserProfileProps) {
           <div className="flex items-center gap-3 px-4 py-3 bg-[#F8FAFC] rounded-md border border-[rgba(0,0,0,0.06)]">
             <Mail className="w-4 h-4 text-[#4F7DF3] shrink-0" />
             <div>
-              <p className="text-[0.72rem] text-[#64748B] font-sans">Email Address</p>
+              <p className="text-[0.72rem] text-[#64748B] font-sans">{t("Email Address")}</p>
               <p className="text-[0.9rem] font-medium text-[#1E293B] font-sans">{user.email}</p>
             </div>
           </div>
@@ -81,9 +83,9 @@ export default function UserProfile({ onClose }: UserProfileProps) {
           <div className="flex items-center gap-3 px-4 py-3 bg-[#F8FAFC] rounded-md border border-[rgba(0,0,0,0.06)]">
             <Phone className="w-4 h-4 text-[#4F7DF3] shrink-0" />
             <div>
-              <p className="text-[0.72rem] text-[#64748B] font-sans">Phone Number</p>
+              <p className="text-[0.72rem] text-[#64748B] font-sans">{t("Phone Number")}</p>
               <p className="text-[0.9rem] font-medium text-[#1E293B] font-sans">
-                {user.phone || <span className="text-[#64748B] italic">Not set</span>}
+                {user.phone || <span className="text-[#64748B] italic">{t("Not set")}</span>}
               </p>
             </div>
           </div>
@@ -98,14 +100,14 @@ export default function UserProfile({ onClose }: UserProfileProps) {
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-md bg-[#4F7DF3] text-white hover:bg-[#3D6DE3] transition-colors text-[0.9rem] font-semibold font-sans cursor-pointer shadow-[0_2px_10px_rgba(79,125,243,0.3)]"
           >
             <LayoutDashboard className="w-4 h-4" />
-            My Health Dashboard
+            {t("My Health Dashboard")}
           </button>
           <button
             onClick={() => setEditing(true)}
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full border border-[#4F7DF3] text-[#4F7DF3] hover:bg-[#4F7DF3] hover:text-white transition-colors text-[0.9rem] font-semibold font-sans cursor-pointer"
           >
             <Pencil className="w-4 h-4" />
-            Edit Profile
+            {t("Edit Profile")}
           </button>
         </div>
       )}
@@ -115,7 +117,7 @@ export default function UserProfile({ onClose }: UserProfileProps) {
         <form onSubmit={handleSave} className="flex flex-col gap-4 mb-6">
           <div>
             <label className="block text-[0.8rem] font-semibold text-[#1E293B] mb-1.5 font-sans">
-              Full Name
+              {t("Full Name")}
             </label>
             <input
               type="text"
@@ -128,7 +130,7 @@ export default function UserProfile({ onClose }: UserProfileProps) {
           </div>
           <div>
             <label className="block text-[0.8rem] font-semibold text-[#1E293B] mb-1.5 font-sans">
-              Phone Number
+              {t("Phone Number")}
             </label>
             <input
               type="tel"
@@ -144,13 +146,13 @@ export default function UserProfile({ onClose }: UserProfileProps) {
               onClick={() => setEditing(false)}
               className="flex-1 py-2.5 rounded-full border border-[rgba(0,0,0,0.1)] text-[#64748B] hover:bg-[#F8FAFC] transition-colors text-[0.9rem] font-semibold font-sans cursor-pointer"
             >
-              Cancel
+              {t("Cancel")}
             </button>
             <button
               type="submit"
               className="flex-1 py-2.5 bg-[#4F7DF3] hover:bg-[#3D6DE3] text-white border-none rounded-full text-[0.9rem] font-bold font-sans cursor-pointer transition-all duration-200"
             >
-              Save Changes
+              {t("Save Changes")}
             </button>
           </div>
         </form>
@@ -162,7 +164,7 @@ export default function UserProfile({ onClose }: UserProfileProps) {
         className="flex items-center justify-center gap-2 w-full py-2.5 rounded-full border border-[#d4183d]/30 text-[#d4183d] hover:bg-[#d4183d]/5 transition-colors text-[0.9rem] font-semibold font-sans cursor-pointer"
       >
         <LogOut className="w-4 h-4" />
-        Log Out
+        {t("Log Out")}
       </button>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 const healthData = {
   score: 74,
@@ -61,6 +62,7 @@ const priorityConfig: Record<string, string> = {
 };
 
 export function HealthDashboard() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dos");
   const [checkedTasks, setCheckedTasks] = useState<Record<number, boolean>>(
@@ -77,18 +79,18 @@ export function HealthDashboard() {
       <div className="bg-red-50 border border-red-200 px-4 py-3 flex gap-3 text-red-900">
         <AlertTriangle className="w-6 h-6 shrink-0" />
         <span className="text-sm">
-          <strong className="uppercase">Clinical Alert:</strong> 2 critical interventions require immediate compliance based on latest diagnostic reports.
+          <strong className="uppercase">{t("Clinical Alert")}:</strong> {t("2 critical interventions require immediate compliance based on latest diagnostic reports.")}
         </span>
       </div>
 
       {/* Header */}
       <div className="border border-slate-300 bg-slate-50 flex items-center justify-between p-6">
         <div>
-          <h1 className="text-2xl font-bold uppercase tracking-tight">Patient Dossier: {healthData.name}</h1>
-          <p className="text-sm font-semibold text-slate-600 uppercase mt-1">Registry Data (Age: {healthData.age}) | Last Update: {healthData.lastUpdated}</p>
+          <h1 className="text-2xl font-bold uppercase tracking-tight">{t("Patient Dossier")}: {t(healthData.name)}</h1>
+          <p className="text-sm font-semibold text-slate-600 uppercase mt-1">{t("Registry Data")} ({t("Age")}: {healthData.age}) | {t("Last Update")}: {t(healthData.lastUpdated)}</p>
         </div>
         <div className="text-right">
-          <div className="text-sm font-bold uppercase text-slate-600 mb-1">Index Score</div>
+          <div className="text-sm font-bold uppercase text-slate-600 mb-1">{t("Index Score")}</div>
           <div className={`text-4xl font-bold ${healthData.score < 80 ? "text-yellow-600" : "text-green-600"}`}>
             {healthData.score}/100
           </div>
@@ -101,33 +103,33 @@ export function HealthDashboard() {
         {/* Urgent Interventions */}
         <div className="border border-slate-300">
           <div className="bg-slate-100 border-b border-slate-300 p-4 flex justify-between items-center">
-            <h2 className="font-bold uppercase tracking-wide">Mandatory Interventions</h2>
+            <h2 className="font-bold uppercase tracking-wide">{t("Mandatory Interventions")}</h2>
             <div className="flex border border-slate-300 bg-white text-xs font-bold uppercase">
               <button 
                 onClick={() => setActiveTab("dos")}
                 className={`px-4 py-2 ${activeTab === "dos" ? "bg-[#0056b3] text-white" : "hover:bg-slate-100"}`}
-              >Directives (Do's)</button>
+              >{t("Directives (Do's)")}</button>
               <button 
                 onClick={() => setActiveTab("donts")}
                 className={`px-4 py-2 border-l border-slate-300 ${activeTab === "donts" ? "bg-red-800 text-white" : "hover:bg-slate-100"}`}
-              >Prohibitions (Don'ts)</button>
+              >{t("Prohibitions (Don'ts)")}</button>
             </div>
           </div>
           <div className="p-0">
              <table className="w-full text-left text-sm">
                <thead className="bg-[#e6f2ff] border-b border-slate-300">
                  <tr>
-                   <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">Directive</th>
-                   <th className="p-3 uppercase font-bold text-xs text-[#0056b3] w-24">Priority</th>
+                   <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">{t("Directive")}</th>
+                   <th className="p-3 uppercase font-bold text-xs text-[#0056b3] w-24">{t("Priority")}</th>
                  </tr>
                </thead>
                <tbody className="divide-y divide-slate-300">
                  {(activeTab === "dos" ? healthData.interventions.dos : healthData.interventions.donts).map((item) => (
                    <tr key={item.id} className="hover:bg-slate-50">
-                     <td className="p-3 font-semibold">{item.text}</td>
+                     <td className="p-3 font-semibold">{t(item.text)}</td>
                      <td className="p-3">
                        <span className={`px-2 py-1 border text-xs font-bold uppercase ${priorityConfig[item.priority]}`}>
-                         {item.priority}
+                         {t(item.priority)}
                        </span>
                      </td>
                    </tr>
@@ -140,9 +142,9 @@ export function HealthDashboard() {
         {/* Daily Schedule */}
         <div className="border border-slate-300 flex flex-col">
           <div className="bg-slate-100 border-b border-slate-300 p-4 flex justify-between items-center">
-            <h2 className="font-bold uppercase tracking-wide">Daily Compliance Tracker</h2>
+            <h2 className="font-bold uppercase tracking-wide">{t("Daily Compliance Tracker")}</h2>
             <span className="font-bold text-sm bg-white border border-slate-300 px-3 py-1">
-               {completedCount} / {healthData.dailyMandate.length} MET
+               {completedCount} / {healthData.dailyMandate.length} {t("MET")}
             </span>
           </div>
           <div className="p-4 flex-1 bg-white overflow-y-auto max-h-[300px]">
@@ -157,10 +159,10 @@ export function HealthDashboard() {
                        className="w-5 h-5 accent-[#0056b3] cursor-pointer"
                      />
                      <span className={`text-sm font-bold ${checkedTasks[task.id] ? "line-through text-slate-500" : "text-slate-900"}`}>
-                       {task.task}
+                       {t(task.task)}
                      </span>
                    </div>
-                   <span className="text-xs font-bold text-slate-500 mt-2 sm:mt-0 sm:ml-4">{task.time}</span>
+                   <span className="text-xs font-bold text-slate-500 mt-2 sm:mt-0 sm:ml-4">{t(task.time)}</span>
                  </label>
                ))}
              </div>
@@ -174,15 +176,15 @@ export function HealthDashboard() {
         {/* Lab Reports */}
         <div className="border border-slate-300">
           <div className="bg-slate-100 border-b border-slate-300 p-4">
-            <h2 className="font-bold uppercase tracking-wide">Diagnostics Overview</h2>
-            <p className="text-xs font-bold text-slate-500 mt-1 uppercase">Latest Verified Pathcare Records</p>
+            <h2 className="font-bold uppercase tracking-wide">{t("Diagnostics Overview")}</h2>
+            <p className="text-xs font-bold text-slate-500 mt-1 uppercase">{t("Latest Verified Pathcare Records")}</p>
           </div>
           <table className="w-full text-left text-sm">
             <thead className="bg-white border-b border-slate-300">
               <tr>
-                <th className="p-3 uppercase font-bold text-xs text-slate-700">Marker</th>
-                <th className="p-3 uppercase font-bold text-xs text-slate-700">Value (Ref)</th>
-                <th className="p-3 uppercase font-bold text-xs text-slate-700 w-24">Status</th>
+                <th className="p-3 uppercase font-bold text-xs text-slate-700">{t("Marker")}</th>
+                <th className="p-3 uppercase font-bold text-xs text-slate-700">{t("Value (Ref)")}</th>
+                <th className="p-3 uppercase font-bold text-xs text-slate-700 w-24">{t("Status")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-300 bg-white">
@@ -190,14 +192,14 @@ export function HealthDashboard() {
                  const s = statusConfig[r.status];
                  return (
                    <tr key={r.id}>
-                     <td className="p-3 font-bold">{r.test}</td>
+                     <td className="p-3 font-bold">{t(r.test)}</td>
                      <td className="p-3">
-                       <div className="font-bold">{r.value}</div>
-                       <div className="text-xs text-slate-500">{r.range}</div>
+                       <div className="font-bold">{t(r.value)}</div>
+                       <div className="text-xs text-slate-500">{t(r.range)}</div>
                      </td>
                      <td className="p-3">
                        <span className={`px-2 py-1 text-xs font-bold border border-current ${s.bg} ${s.text}`}>
-                         {s.badge}
+                         {t(s.badge)}
                        </span>
                      </td>
                    </tr>
@@ -211,22 +213,22 @@ export function HealthDashboard() {
         <div className="border border-slate-300">
           <div className="bg-slate-100 border-b border-slate-300 p-4 flex justify-between items-center">
             <div>
-              <h2 className="font-bold uppercase tracking-wide">Approved Medication</h2>
-              <p className="text-xs font-bold text-slate-500 mt-1 uppercase">Stock and Dispensation Log</p>
+              <h2 className="font-bold uppercase tracking-wide">{t("Approved Medication")}</h2>
+              <p className="text-xs font-bold text-slate-500 mt-1 uppercase">{t("Stock and Dispensation Log")}</p>
             </div>
           </div>
           <div className="divide-y divide-slate-300 bg-white">
              {healthData.medicines.map((m) => (
                <div key={m.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-slate-50">
                  <div>
-                   <h3 className="font-bold text-lg text-[#0056b3] uppercase">{m.name} <span className="text-sm text-slate-600">({m.category})</span></h3>
-                   <p className="text-sm font-semibold mt-1">{m.dose} — {m.frequency}</p>
-                   <p className="text-xs font-bold text-slate-500 uppercase mt-1">Dispensation Time: {m.time}</p>
+                   <h3 className="font-bold text-lg text-[#0056b3] uppercase">{t(m.name)} <span className="text-sm text-slate-600">({t(m.category)})</span></h3>
+                   <p className="text-sm font-semibold mt-1">{t(m.dose)} — {t(m.frequency)}</p>
+                   <p className="text-xs font-bold text-slate-500 uppercase mt-1">{t("Dispensation Time")}: {t(m.time)}</p>
                  </div>
                  <div className="mt-4 sm:mt-0 sm:text-right border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-200">
-                   <div className="text-xs font-bold uppercase text-slate-600 mb-1">Available Stock</div>
+                   <div className="text-xs font-bold uppercase text-slate-600 mb-1">{t("Available Stock")}</div>
                    <div className={`text-xl font-bold ${m.stock < 10 ? "text-red-600" : "text-slate-900"}`}>{m.stock} <span className="text-sm">/ {m.total}</span></div>
-                   {m.stock < 10 && <div className="text-xs font-bold text-red-600 uppercase mt-1">Requisition Needed</div>}
+                   {m.stock < 10 && <div className="text-xs font-bold text-red-600 uppercase mt-1">{t("Requisition Needed")}</div>}
                  </div>
                </div>
              ))}

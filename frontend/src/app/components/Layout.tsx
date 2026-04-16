@@ -1,10 +1,11 @@
 import { Link, Outlet, useLocation } from "react-router";
-import { LogIn, Menu, X, User, Home, Activity, FileText, BriefcaseMedical, Stethoscope, ClipboardList, Calendar, Pill } from "lucide-react";
+import { LogIn, Menu, X, User, Home, Activity, FileText, BriefcaseMedical, Stethoscope, ClipboardList, Calendar, Pill, Globe } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import SwasthyaAuth from "./SwasthyaAuth";
 import UserProfile from "./UserProfile";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import Footer from "./Footer";
 
 export function Layout() {
@@ -12,6 +13,7 @@ export function Layout() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const { isLoggedIn, user } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const location = useLocation();
 
   const initials = user.name
@@ -68,7 +70,7 @@ export function Layout() {
       <div className="lg:hidden flex items-center justify-between p-3 border-b border-slate-300 bg-white z-50 sticky top-0">
         <Link to="/" className="flex items-center gap-2">
           <img src="/logo.png" alt="Logo" className="h-14 w-auto" />
-          <span className="text-xl font-bold text-slate-900 tracking-tight">RuralTriage AI</span>
+          <span className="text-xl font-bold text-slate-900 tracking-tight">{t("RuralTriage AI")}</span>
         </Link>
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 border border-slate-300 rounded-sm">
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -79,7 +81,7 @@ export function Layout() {
       <aside className={`${mobileMenuOpen ? "block" : "hidden"} lg:flex flex-col w-full lg:w-64 border-r border-slate-300 bg-white h-screen sticky top-0 z-40 overflow-y-auto`}> 
         <div className="hidden lg:flex items-center gap-2 px-6 py-4 border-b border-slate-300">
           <img src="/logo.png" alt="Logo" className="h-16 w-auto" />
-          <span className="text-xl font-bold text-slate-900 tracking-tight leading-none">RuralTriage AI</span>
+          <span className="text-xl font-bold text-slate-900 tracking-tight leading-none">{t("RuralTriage AI")}</span>
         </div>
 
         <div className="p-4 flex-1 space-y-2 mt-4">
@@ -95,10 +97,27 @@ export function Layout() {
                 }`}
               >
                 {item.icon}
-                {item.name}
+                {t(item.name)}
               </Link>
             );
           })}
+        </div>
+        
+        {/* Language Selector */}
+        <div className="px-6 py-4 border-t border-slate-300">
+          <div className="flex items-center gap-2 mb-3">
+            <Globe className="w-4 h-4 text-[#0056b3]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#0056b3]">{t("Language")}</span>
+          </div>
+          <select 
+            value={language} 
+            onChange={(e) => setLanguage(e.target.value as any)}
+            className="w-full px-3 py-2 bg-white border border-slate-300 text-xs font-bold uppercase outline-none focus:border-[#0056b3] appearance-none cursor-pointer hover:bg-slate-50 transition-colors"
+          >
+            <option value="en">English (EN)</option>
+            <option value="hi">हिंदी (Hindi)</option>
+            <option value="mr">मराठी (Marathi)</option>
+          </select>
         </div>
 
         {/* User / Auth Area at bottom of sidebar */}
@@ -126,7 +145,7 @@ export function Layout() {
             <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
               <DialogTrigger asChild>
                 <button className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#0056b3] text-white rounded-sm font-bold hover:bg-blue-800 transition-colors">
-                  <LogIn className="w-5 h-5" /> Login / Register
+                  <LogIn className="w-5 h-5" /> {t("Login / Register")}
                 </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md p-0 outline-none border-none bg-transparent shadow-none">

@@ -1,8 +1,10 @@
 import { Link } from "react-router";
 import { Video, Activity, MapPin, FileText, Droplets, Thermometer, Heart, ShieldCheck, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
+import { useLanguage } from "../context/LanguageContext";
 
 export function Home() {
+  const { t } = useLanguage();
   const features = [
     {
       title: "Tele-Consultation",
@@ -51,7 +53,7 @@ export function Home() {
       >
         <ShieldCheck className="w-6 h-6 text-[#0056b3] shrink-0" />
         <div className="text-sm text-slate-800">
-          <span className="font-bold">Official Portal of RuralTriage AI:</span> Providing accessible, standardized healthcare triage for rural blocks. All records are securely maintained under local health data policies.
+          <span className="font-bold">{t("Official Portal of RuralTriage AI:")}</span> {t("Providing accessible, standardized healthcare triage for rural blocks. All records are securely maintained under local health data policies.")}
         </div>
       </motion.div>
 
@@ -63,25 +65,25 @@ export function Home() {
             animate="visible"
             className="p-6 md:p-12 z-10 relative flex-1"
           >
-            <motion.div custom={0} variants={fadeIn} className="inline-block px-3 py-1 bg-blue-100 text-[#0056b3] text-[10px] font-black uppercase tracking-[0.2em] mb-4">Patient Portal</motion.div>
+            <motion.div custom={0} variants={fadeIn} className="inline-block px-3 py-1 bg-blue-100 text-[#0056b3] text-[10px] font-black uppercase tracking-[0.2em] mb-4">{t("Patient Portal")}</motion.div>
             <motion.h1 custom={1} variants={fadeIn} className="text-3xl lg:text-5xl font-black text-slate-900 mb-4 uppercase tracking-tighter leading-none">
-              Healthcare Access
+              {t("Healthcare Access")}
             </motion.h1>
             <motion.p custom={2} variants={fadeIn} className="text-sm md:text-base font-bold text-slate-500 max-w-xl leading-relaxed mb-8 uppercase tracking-wide">
-              Consult registered practitioners online, perform initial triage, locate essential medicines, and manage authorized health records securely.
+              {t("Consult registered practitioners online, perform initial triage, locate essential medicines, and manage authorized health records securely.")}
             </motion.p>
             <motion.div custom={3} variants={fadeIn} className="flex flex-wrap gap-4">
               <Link
                 to="/talk-to-doctor"
                 className="px-8 py-4 bg-[#0056b3] text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:shadow-2xl hover:bg-blue-800 transition-all hover:-translate-y-1"
               >
-                Start Consultation
+                {t("Start Consultation")}
               </Link>
               <Link
                 to="/check-symptoms"
                 className="px-8 py-4 bg-white text-[#0056b3] border border-slate-200 shadow-sm font-black text-[11px] uppercase tracking-[0.2em] hover:bg-slate-50 transition-all hover:-translate-y-1"
               >
-                Triage Symptoms
+                {t("Triage Symptoms")}
               </Link>
             </motion.div>
           </motion.div>
@@ -122,11 +124,11 @@ export function Home() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-slate-900 uppercase tracking-wide mb-2 flex items-center gap-2 group-hover:text-[#0056b3] transition-colors">
-                    {feature.title}
+                    {t(feature.title)}
                     <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-[#0056b3] group-hover:translate-x-1 transition-all" />
                   </h3>
                   <p className="text-slate-600 text-base leading-relaxed">
-                    {feature.description}
+                    {t(feature.description)}
                   </p>
                 </div>
               </Link>
@@ -145,10 +147,10 @@ export function Home() {
       >
         <div className="p-4 sm:p-6 border-b border-slate-300 bg-slate-50 flex items-center justify-between">
           <h2 className="text-xl font-bold text-slate-900 uppercase tracking-wide">
-            Public Health Advisories
+            {t("Public Health Advisories")}
           </h2>
           <Link to="/health-tips" className="text-sm font-bold text-[#0056b3] hover:underline uppercase tracking-wide">
-            View All Directives →
+            {t("View All Directives")} →
           </Link>
         </div>
         
@@ -156,22 +158,22 @@ export function Home() {
            <div className="p-4 sm:p-6 flex gap-4 hover:bg-slate-50 transition-colors">
              <div className="mt-1"><Droplets className="w-6 h-6 text-slate-600" /></div>
              <div>
-               <h4 className="font-bold text-slate-900 text-lg">Safe Drinking Water Directive</h4>
-               <p className="text-slate-700 mt-1">Ensure water is boiled before consumption to mitigate prevalent seasonal water-borne diseases.</p>
+               <h4 className="font-bold text-slate-900 text-lg">{t("Safe Drinking Water Directive")}</h4>
+               <p className="text-slate-700 mt-1">{t("Ensure water is boiled before consumption to mitigate prevalent seasonal water-borne diseases.")}</p>
              </div>
            </div>
            <div className="p-4 sm:p-6 flex gap-4 hover:bg-slate-50 transition-colors">
              <div className="mt-1"><Heart className="w-6 h-6 text-slate-600" /></div>
              <div>
-               <h4 className="font-bold text-slate-900 text-lg">Sanitation Protocol</h4>
-               <p className="text-slate-700 mt-1">Standardize frequent hand-washing practices using soap to prevent community transmission.</p>
+               <h4 className="font-bold text-slate-900 text-lg">{t("Sanitation Protocol")}</h4>
+               <p className="text-slate-700 mt-1">{t("Standardize frequent hand-washing practices using soap to prevent community transmission.")}</p>
              </div>
            </div>
            <div className="p-4 sm:p-6 flex gap-4 hover:bg-slate-50 transition-colors">
              <div className="mt-1"><Thermometer className="w-6 h-6 text-slate-600" /></div>
              <div>
-               <h4 className="font-bold text-slate-900 text-lg">Fever Monitoring</h4>
-               <p className="text-slate-700 mt-1">Any sustained elevated temperatures must be reported via the Talk to Doctor portal immediately.</p>
+               <h4 className="font-bold text-slate-900 text-lg">{t("Fever Monitoring")}</h4>
+               <p className="text-slate-700 mt-1">{t("Any sustained elevated temperatures must be reported via the Talk to Doctor portal immediately.")}</p>
              </div>
            </div>
         </div>

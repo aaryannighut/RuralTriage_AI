@@ -12,8 +12,10 @@ import {
   Smile,
   Activity,
 } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 export function HealthTips() {
+  const { t } = useLanguage();
   const tipCategories = [
     {
       category: "Hygiene & Prevention",
@@ -122,10 +124,10 @@ export function HealthTips() {
             className="text-2xl md:text-3xl lg:text-4xl text-[#1E293B] mb-4"
             style={{ fontWeight: 700 }}
           >
-            Daily Health Tips
+            {t("Daily Health Tips")}
           </h1>
           <p className="text-lg text-[#64748B] max-w-2xl mx-auto">
-            Simple and practical health advice for better living in rural areas
+            {t("Simple and practical health advice for better living in rural areas")}
           </p>
         </div>
 
@@ -138,7 +140,7 @@ export function HealthTips() {
                   className="text-xl md:text-2xl text-[#1E293B] mb-2"
                   style={{ fontWeight: 700 }}
                 >
-                  {category.category}
+                  {t(category.category)}
                 </h2>
                 <div
                   className="w-20 h-1 rounded-full"
@@ -164,10 +166,10 @@ export function HealthTips() {
                         className="text-lg text-[#1E293B] mb-3"
                         style={{ fontWeight: 600 }}
                       >
-                        {tip.title}
+                        {t(tip.title)}
                       </h3>
                       <p className="text-[#64748B] leading-relaxed">
-                        {tip.description}
+                        {t(tip.description)}
                       </p>
                     </div>
                   );
@@ -187,25 +189,23 @@ export function HealthTips() {
               className="text-xl text-[#1E293B] mb-3"
               style={{ fontWeight: 700 }}
             >
-              In Case of Emergency
+              {t("In Case of Emergency")}
             </h3>
             <p className="text-[#64748B] mb-6 max-w-2xl mx-auto">
-              For serious health emergencies, please call emergency services or visit the
-              nearest health center immediately. Don't delay seeking professional medical
-              help.
+              {t("For serious health emergencies, please call emergency services or visit the nearest health center immediately. Don't delay seeking professional medical help.")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
                 href="tel:108"
                 className="px-8 py-4 bg-[#4F7DF3] text-white rounded-md hover:bg-[#3D6DE3] transition-colors"
               >
-                Call Emergency: 108
+                {t("Call Emergency")}: 108
               </a>
               <button
                 onClick={() => (window.location.href = "/talk-to-doctor")}
                 className="px-8 py-4 bg-white text-[#4F7DF3] border-2 border-[#4F7DF3] rounded-md hover:bg-[#F8FAFC] transition-colors"
               >
-                Talk to Doctor
+                {t("Talk to Doctor")}
               </button>
             </div>
           </div>

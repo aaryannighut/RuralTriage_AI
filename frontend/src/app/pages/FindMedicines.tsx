@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, MapPin, Phone, Clock, FileText, Loader2, AlertCircle, Building2, ChevronRight, ShieldAlert } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 interface MedicineResponse {
   id: number;
   name: string;
@@ -20,6 +21,7 @@ interface PharmacySearchResponse {
 }
 
 export function FindMedicines() {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMedicine, setSelectedMedicine] = useState<MedicineResponse | null>(null);
   const [medicineSuggestions, setMedicineSuggestions] = useState<MedicineResponse[]>([]);
@@ -200,8 +202,8 @@ export function FindMedicines() {
   if (!user.userId) return (
     <div className="w-full max-w-4xl mx-auto p-6 mt-12 bg-red-50 border border-red-300 flex items-center flex-col text-center">
        <ShieldAlert className="w-12 h-12 text-red-700 mb-3" />
-       <h2 className="text-xl font-bold text-red-900 uppercase">Unauthorized Access</h2>
-       <p className="text-red-800 font-semibold mt-2">Authentication required to search pharmacy inventories.</p>
+       <h2 className="text-xl font-bold text-red-900 uppercase">{t("Unauthorized Access")}</h2>
+       <p className="text-red-800 font-semibold mt-2">{t("Authentication required to search pharmacy inventories.")}</p>
     </div>
   );
 
@@ -210,9 +212,9 @@ export function FindMedicines() {
       
       {/* Header Panel */}
       <div className="border-b-4 border-[#0056b3] bg-slate-50 p-6 mb-8">
-         <h1 className="text-3xl font-bold uppercase tracking-tighter text-[#0056b3]">Pharmacy Locator</h1>
+         <h1 className="text-3xl font-bold uppercase tracking-tighter text-[#0056b3]">{t("Pharmacy Locator")}</h1>
          <p className="text-sm font-semibold text-slate-600 mt-2 uppercase tracking-widest">
-           Centralized Database For Drug Availability & Dispensary Sourcing
+           {t("Centralized Database For Drug Availability & Dispensary Sourcing")}
          </p>
       </div>
 
@@ -222,7 +224,7 @@ export function FindMedicines() {
         <div className="w-full lg:w-[40%] border-x lg:border-r border-slate-300 bg-white h-full flex flex-col min-w-0 shrink-0">
           <div className="bg-[#e6f2ff] border-b border-slate-300 p-5">
             <h2 className="font-bold text-[#0056b3] uppercase tracking-wide flex items-center gap-2">
-               <Search className="w-5 h-5"/> Medicine Search Interface
+               <Search className="w-5 h-5"/> {t("Medicine Search Interface")}
             </h2>
           </div>
           
@@ -230,7 +232,7 @@ export function FindMedicines() {
             <form onSubmit={performSearch} className="flex flex-col gap-3">
               <input
                 type="text"
-                placeholder="ENTER MEDICINE NAME..."
+                placeholder={t("ENTER MEDICINE NAME...")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-slate-300 bg-white text-base font-bold focus:outline-none focus:border-[#0056b3] uppercase"
@@ -240,22 +242,22 @@ export function FindMedicines() {
                  className="w-full bg-[#0056b3] hover:bg-blue-800 text-white font-bold uppercase py-3 px-6 tracking-wider transition-colors disabled:bg-slate-400"
                  disabled={loadingMedicines}
               >
-                 {loadingMedicines ? "Querying..." : "Search Database"}
+                 {loadingMedicines ? t("Querying...") : t("Search Database")}
               </button>
             </form>
           </div>
 
           <div className="flex-1 overflow-y-auto bg-slate-50 relative min-h-[400px]">
-             {loadingMedicines ? (
+                 {loadingMedicines ? (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
                   <div className="flex flex-col items-center text-[#0056b3] font-bold uppercase gap-3">
-                     <Loader2 className="w-8 h-8 animate-spin" /> Fetching Master List...
+                     <Loader2 className="w-8 h-8 animate-spin" /> {t("Fetching Master List...")}
                   </div>
                 </div>
              ) : hasSearched && medicineSuggestions.length === 0 ? (
                 <div className="p-8 text-center text-sm font-bold text-red-600 uppercase border-b border-red-200 bg-red-50">
                   <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  No Results Found.
+                  {t("No Results Found.")}
                 </div>
              ) : hasSearched ? (
                 <div className="divide-y divide-slate-300">
@@ -265,23 +267,23 @@ export function FindMedicines() {
                       className={`cursor-pointer p-5 transition-colors border-l-4 ${selectedMedicine?.id === med.id ? "border-[#0056b3] bg-white" : "border-slate-300 hover:bg-slate-100"}`}
                     >
                       <div className="flex justify-between items-start mb-2">
-                         <div className="font-extrabold text-lg text-slate-900 tracking-tight">{med.name}</div>
+                         <div className="font-extrabold text-lg text-slate-900 tracking-tight">{t(med.name)}</div>
                          <div className="font-bold text-lg text-[#0056b3]">₹{med.price}</div>
                       </div>
                       <div className="grid grid-cols-2 gap-y-2 mt-3">
                          <div>
-                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Type</div>
-                            <div className="text-sm font-semibold text-slate-800 uppercase">{med.type}</div>
+                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t("Type")}</div>
+                            <div className="text-sm font-semibold text-slate-800 uppercase">{t(med.type)}</div>
                          </div>
                          <div className="text-right">
-                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Global Status</div>
+                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t("Global Status")}</div>
                             <div className={`inline-block px-2 py-0.5 mt-0.5 text-xs font-bold uppercase border ${med.availability ? "bg-[#e8f5e9] text-green-900 border-green-300" : "bg-red-50 text-red-900 border-red-300"}`}>
-                               {med.availability ? "AVAILABLE" : "NOT AVAILABLE"}
+                               {med.availability ? t("AVAILABLE") : t("NOT AVAILABLE")}
                             </div>
                          </div>
                          <div className="col-span-2 mt-1">
-                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Primary Use</div>
-                            <div className="text-xs font-medium text-slate-700 capitalize">{med.use}</div>
+                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t("Primary Use")}</div>
+                            <div className="text-xs font-medium text-slate-700 capitalize">{t(med.use)}</div>
                          </div>
                       </div>
                     </div>
@@ -289,7 +291,7 @@ export function FindMedicines() {
                 </div>
              ) : (
                 <div className="p-12 text-center text-sm font-bold text-slate-400 uppercase">
-                  Awaiting query criteria. Input medicine name above to search the registry.
+                  {t("Awaiting query criteria. Input medicine name above to search the registry.")}
                 </div>
              )}
           </div>
@@ -299,11 +301,11 @@ export function FindMedicines() {
         <div className="flex-1 border-r lg:border-x border-slate-300 bg-slate-100 h-full flex flex-col min-w-0">
           <div className="bg-white border-b border-slate-300 p-5 flex items-center justify-between">
              <h2 className="font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
-               <Building2 className="w-5 h-5"/> Available Nearby
+               <Building2 className="w-5 h-5"/> {t("Available Nearby")}
              </h2>
              {selectedMedicine && (
                 <div className="text-xs font-bold bg-[#e6f2ff] text-[#0056b3] px-3 py-1 border border-blue-200 uppercase tracking-wider">
-                  Filtering: {selectedMedicine.name}
+                  {t("Filtering")}: {t(selectedMedicine.name)}
                 </div>
              )}
           </div>
@@ -311,20 +313,20 @@ export function FindMedicines() {
           <div className="p-0 flex-1 overflow-y-auto">
              {loadingPharmacies ? (
                 <div className="py-24 text-center text-sm font-bold text-[#0056b3] uppercase flex flex-col items-center justify-center gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin" /> Cross-referencing Directory...
+                  <Loader2 className="w-8 h-8 animate-spin" /> {t("Cross-referencing Directory...")}
                 </div>
              ) : selectedMedicine && displayPharmacies.length === 0 ? (
                 <div className="m-6 p-8 text-center flex flex-col items-center bg-yellow-50 border border-yellow-300">
                   <AlertCircle className="w-10 h-10 text-yellow-600 mb-3" />
-                  <p className="text-base font-bold text-yellow-900 uppercase">Alert: No nearby pharmacy has this medicine</p>
-                  <p className="text-sm font-semibold text-yellow-800 mt-2">Try expanding your search radius or selecting an alternative medication from the database.</p>
+                  <p className="text-base font-bold text-yellow-900 uppercase">{t("Alert: No nearby pharmacy has this medicine")}</p>
+                  <p className="text-sm font-semibold text-yellow-800 mt-2">{t("Try expanding your search radius or selecting an alternative medication from the database.")}</p>
                 </div>
              ) : (
                 <div className="divide-y divide-slate-300">
                    {!selectedMedicine ? (
                       <div className="p-12 text-center text-sm font-bold text-slate-500 uppercase">
                         <FileText className="w-8 h-8 mx-auto mb-3 opacity-50" />
-                        Directory Nominal. Search and select a medication.
+                        {t("Directory Nominal. Search and select a medication.")}
                       </div>
                    ) : null}
 
@@ -333,14 +335,14 @@ export function FindMedicines() {
                         <div key={pharmacy.id} className="p-6 bg-white hover:bg-[#fafafa] transition-none flex flex-col border-b border-slate-300">
                            <div className="flex-1 w-full min-w-0">
                               <h3 className="text-xl font-bold text-slate-900 uppercase mb-3 flex items-center gap-2">
-                                 {pharmacy.name}
-                                 <span className="text-[10px] bg-[#0056b3] text-white px-2 py-0.5 rounded-sm shrink-0">Verified</span>
+                                 {t(pharmacy.name)}
+                                 <span className="text-[10px] bg-[#0056b3] text-white px-2 py-0.5 rounded-sm shrink-0">{t("Verified")}</span>
                               </h3>
                               <div className="space-y-3 mb-5">
                                  <div className="flex items-start gap-3 text-sm text-slate-800">
                                    <MapPin className="w-5 h-5 text-slate-400 mt-0.5 shrink-0" />
                                    <span className="font-semibold uppercase break-words whitespace-normal leading-relaxed">
-                                      {pharmacy.address}
+                                      {t(pharmacy.address)}
                                    </span>
                                  </div>
                                  <div className="flex items-center gap-3 text-sm text-slate-800">
@@ -349,25 +351,25 @@ export function FindMedicines() {
                                  </div>
                                  <div className="flex items-center gap-3 text-sm text-slate-800">
                                    <Clock className="w-5 h-5 text-slate-400 shrink-0" />
-                                   <span className="font-semibold uppercase tracking-wider text-slate-600 truncate">{pharmacy.timing}</span>
+                                   <span className="font-semibold uppercase tracking-wider text-slate-600 truncate">{t(pharmacy.timing)}</span>
                                  </div>
                               </div>
                            </div>
 
                            <div className="w-full flex-col sm:flex-row justify-between items-center sm:items-end gap-4 border-t border-slate-200 pt-4 mt-auto">
                               <div className="mb-4 sm:mb-0">
-                                 <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 mt-1">Inventory Verification</div>
+                                 <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 mt-1">{t("Inventory Verification")}</div>
                                  <div className="flex justify-between items-center px-4 py-2 border font-bold uppercase tracking-wide text-sm bg-[#e8f5e9] text-green-900 border-green-300">
-                                    <span>CONFIRMED IN STOCK</span>
+                                    <span>{t("CONFIRMED IN STOCK")}</span>
                                  </div>
                               </div>
                               
                               <div className="flex gap-2 w-full sm:w-auto mt-4">
                                  <button className="flex-1 sm:flex-none px-6 text-center py-3 bg-[#0056b3] hover:bg-blue-800 text-white text-xs font-bold uppercase border border-[#0056b3] transition-colors">
-                                   Call
+                                   {t("Call")}
                                  </button>
                                  <button className="flex-1 sm:flex-none px-6 text-center py-3 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold uppercase border border-slate-300 transition-colors">
-                                   Details
+                                   {t("Details")}
                                  </button>
                               </div>
                            </div>

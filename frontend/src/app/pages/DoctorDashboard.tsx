@@ -8,6 +8,7 @@ import {
   Send, Plus, X, Eye, Sparkles, Activity, TrendingUp, Wifi, WifiOff
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface DoctorProfile {
@@ -65,10 +66,11 @@ const AVAIL_MAP: Record<string, { label: string; api: string; cls: string; dot: 
 function StatCard({ label, value, icon, accent = false, danger = false }: {
   label: string; value: string | number; icon: React.ReactNode; accent?: boolean; danger?: boolean;
 }) {
+  const { t } = useLanguage();
   return (
     <div className={`border p-5 flex items-center justify-between bg-white ${danger ? "border-red-300 bg-red-50/40" : accent ? "border-[#0056b3] bg-[#f0f7ff]" : "border-slate-300"}`}>
       <div>
-        <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">{label}</div>
+        <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">{t(label)}</div>
         <div className={`text-3xl font-black ${danger ? "text-red-600" : accent ? "text-[#0056b3]" : "text-slate-900"}`}>{value}</div>
       </div>
       <div className="opacity-20 scale-150">{icon}</div>
@@ -83,6 +85,7 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
   onSuccess: (msg: string, aiNote?: string) => void;
   onCancel: () => void;
 }) {
+  const { t } = useLanguage();
   const [items, setItems] = useState<PrescriptionItem[]>([{ medicine: "", dosage: "", duration: "", notes: "" }]);
   const [generalNotes, setGeneralNotes] = useState("");
   const [triage, setTriage] = useState<"treat_locally" | "refer_higher">("treat_locally");
@@ -94,7 +97,7 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (items.some(i => !i.medicine || !i.dosage)) { setError("Medicine name + dosage required for every item."); return; }
+    if (items.some(i => !i.medicine || !i.dosage)) { setError(t("Medicine name + dosage required for every item.")); return; }
     setSaving(true); setError("");
     try {
       const res = await fetch("/doctor/prescription", {
@@ -112,7 +115,7 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
       const data = await res.json();
       onSuccess("Prescription issued and dispatched.", data.ai_note ?? undefined);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Server error");
+      setError(err instanceof Error ? err.message : t("Server error"));
     } finally { setSaving(false); }
   };
 
@@ -120,30 +123,30 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <div className="px-3 py-2 bg-red-50 border border-red-300 text-red-800 text-xs font-bold uppercase">{error}</div>}
+      {error && <div className="px-3 py-2 bg-red-50 border border-red-300 text-red-800 text-xs font-bold uppercase">{t(error)}</div>}
 
       {items.map((item, i) => (
         <div key={i} className="border border-slate-200 bg-slate-50 p-4">
           <div className="flex justify-between mb-3">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Medicine {i + 1}</span>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t("Medicine")} {i + 1}</span>
             {items.length > 1 && <button type="button" onClick={() => setItems(p => p.filter((_, j) => j !== i))}><X className="w-4 h-4 text-red-400 hover:text-red-600" /></button>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 sm:col-span-1">
-              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Name *</label>
-              <input required value={item.medicine} onChange={e => update(i, "medicine", e.target.value)} className={ic} placeholder="Paracetamol" />
+              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t("Name")} *</label>
+              <input required value={item.medicine} onChange={e => update(i, "medicine", e.target.value)} className={ic} placeholder={t("Paracetamol")} />
             </div>
             <div className="col-span-2 sm:col-span-1">
-              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Dosage *</label>
-              <input required value={item.dosage} onChange={e => update(i, "dosage", e.target.value)} className={ic} placeholder="500mg BD" />
+              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t("Dosage")} *</label>
+              <input required value={item.dosage} onChange={e => update(i, "dosage", e.target.value)} className={ic} placeholder={t("500mg BD")} />
             </div>
             <div>
-              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Duration</label>
-              <input value={item.duration} onChange={e => update(i, "duration", e.target.value)} className={ic} placeholder="5 days" />
+              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t("Duration")}</label>
+              <input value={item.duration} onChange={e => update(i, "duration", e.target.value)} className={ic} placeholder={t("5 days")} />
             </div>
             <div>
-              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Notes</label>
-              <input value={item.notes} onChange={e => update(i, "notes", e.target.value)} className={ic} placeholder="After food" />
+              <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t("Notes")}</label>
+              <input value={item.notes} onChange={e => update(i, "notes", e.target.value)} className={ic} placeholder={t("After food")} />
             </div>
           </div>
         </div>
@@ -151,18 +154,18 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
 
       <button type="button" onClick={() => setItems(p => [...p, { medicine: "", dosage: "", duration: "", notes: "" }])}
         className="w-full py-2 border-2 border-dashed border-slate-300 hover:border-[#0056b3] text-slate-400 hover:text-[#0056b3] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
-        <Plus className="w-3.5 h-3.5" /> Add Another Medicine
+        <Plus className="w-3.5 h-3.5" /> {t("Add Another Medicine")}
       </button>
 
       <div>
-        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">General Clinical Notes</label>
+        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{t("General Clinical Notes")}</label>
         <textarea value={generalNotes} onChange={e => setGeneralNotes(e.target.value)} rows={2}
           className="w-full px-3 py-2 border border-slate-300 bg-white text-sm outline-none focus:border-[#0056b3] resize-none"
-          placeholder="e.g. Rest, increase water intake, follow-up after 5 days..." />
+          placeholder={t("e.g. Rest, increase water intake, follow-up after 5 days...")} />
       </div>
 
       <div className="mb-2">
-        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Triage Recommendation</label>
+        <label className="block text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{t("Triage Recommendation")}</label>
         <div className="flex gap-2">
            <button 
              type="button" 
@@ -170,7 +173,7 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
              className={`flex-1 py-3 border-2 flex flex-col items-center justify-center transition-all ${triage === "treat_locally" ? "bg-green-50 border-green-600 text-green-800" : "bg-white border-slate-200 text-slate-400"}`}
            >
               <CheckCircle className={`w-5 h-5 mb-1 ${triage === "treat_locally" ? "text-green-600" : "text-slate-200"}`} />
-              <span className="text-[10px] font-black uppercase">Treat Locally</span>
+              <span className="text-[10px] font-black uppercase">{t("Treat Locally")}</span>
            </button>
            <button 
              type="button" 
@@ -178,17 +181,17 @@ function PrescriptionModal({ patient, doctorUserId, onSuccess, onCancel }: {
              className={`flex-1 py-3 border-2 flex flex-col items-center justify-center transition-all ${triage === "refer_higher" ? "bg-blue-50 border-blue-600 text-blue-800" : "bg-white border-slate-200 text-slate-400"}`}
            >
               <TrendingUp className={`w-5 h-5 mb-1 ${triage === "refer_higher" ? "text-blue-600" : "text-slate-200"}`} />
-              <span className="text-[10px] font-black uppercase">Refer Higher</span>
+              <span className="text-[10px] font-black uppercase">{t("Refer Higher")}</span>
            </button>
         </div>
       </div>
 
       <div className="flex gap-3 pt-2">
-        <button type="button" onClick={onCancel} className="flex-1 py-3 border border-slate-300 text-slate-700 font-black uppercase text-xs hover:bg-slate-50">Cancel</button>
+        <button type="button" onClick={onCancel} className="flex-1 py-3 border border-slate-300 text-slate-700 font-black uppercase text-xs hover:bg-slate-50">{t("Cancel")}</button>
         <button type="submit" disabled={saving}
           className="flex-1 py-3 bg-[#0056b3] text-white font-black uppercase text-xs tracking-widest hover:bg-blue-800 disabled:bg-slate-400 flex items-center justify-center gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          {saving ? "Dispatching…" : "Issue Prescription"}
+          {saving ? t("Dispatching…") : t("Issue Prescription")}
         </button>
       </div>
     </form>
@@ -200,6 +203,7 @@ function PatientHistoryPanel({ patientId, onClose, onPrescribe }: {
   patientId: number; onClose: () => void;
   onPrescribe: (p: { patient_id: number; patient_name: string }) => void;
 }) {
+  const { t } = useLanguage();
   const [data, setData] = useState<any>(null);
   const [aiSuggestion, setAiSuggestion] = useState<any>(null);
   const [loading, setLoading]       = useState(true);
@@ -236,7 +240,7 @@ function PatientHistoryPanel({ patientId, onClose, onPrescribe }: {
         {/* Header */}
         <div className="p-5 bg-[#0056b3] flex items-center justify-between shrink-0">
           <h3 className="text-white font-black uppercase tracking-wider flex items-center gap-2 text-sm">
-            <FileText className="w-4 h-4" /> Clinical Record — Patient #{patientId}
+            <FileText className="w-4 h-4" /> {t("Clinical Record")} — {t("Patient")} #{patientId}
           </h3>
           <button onClick={onClose} className="text-white/70 hover:text-white"><X className="w-5 h-5" /></button>
         </div>
@@ -579,7 +583,7 @@ function PageSection({ title, icon, badge, children }: {
       <div className="w-full p-4 bg-slate-100 border-b border-slate-300 flex items-center justify-between text-left">
         <h2 className="font-black uppercase tracking-tighter text-slate-900 flex items-center gap-2 text-sm">
           <span className="text-[#0056b3]">{icon}</span>
-          {title}
+          {t(title)}
           {badge !== undefined && (
             <span className="ml-2 px-2 py-0.5 bg-white border border-slate-300 text-[9px] font-black uppercase text-[#0056b3]">{badge}</span>
           )}
@@ -594,6 +598,7 @@ function PageSection({ title, icon, badge, children }: {
 // Main Dashboard
 // ══════════════════════════════════════════════════════════════════════════════
 export function DoctorDashboard() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -661,7 +666,7 @@ export function DoctorDashboard() {
       if (notifyRes.ok) setNotifications(await notifyRes.json());
       if (famRes.ok)    setFamilyPatients(await famRes.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registry synchronization failure.");
+      setError(err instanceof Error ? err.message : t("Registry synchronization failure."));
     } finally { setLoading(false); }
   }, [user.userId]);
 
@@ -827,74 +832,114 @@ export function DoctorDashboard() {
       </div>
 
       {/* ── NOTIFICATIONS ── */}
-      {notifications.length > 0 && (
-        <div className="border border-blue-200 bg-blue-50/50 p-4">
-          <div className="flex items-start gap-4">
-            <AlertCircle className="w-5 h-5 text-[#0056b3] shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-black uppercase text-[#0056b3] text-sm">Clinical Notifications</p>
-              <div className="mt-3 space-y-2">
-                {notifications.slice().sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 5).map(n => (
-                  <div key={n.id} className="bg-white border border-blue-100 p-3 flex items-center justify-between gap-4 shadow-sm hover:border-blue-300 transition-colors">
-                    <div className="flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                        <div>
-                            <p className="text-xs font-bold text-slate-800 uppercase tracking-tight">{n.message}</p>
-                            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{new Date(n.timestamp).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}</p>
-                        </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* ── EMERGENCY ALERTS ── */}
-      {highRisk.length > 0 && (
-        <div className="border-l-4 border-red-600 border border-red-200 bg-red-50 p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-black uppercase text-red-900 text-sm">
-                ⚠ {highRisk.length} High-Risk Patient{highRisk.length > 1 ? "s" : ""} In Queue
-              </p>
-              <div className="mt-3 space-y-2">
-                {highRisk.map(p => (
-                  <div key={p.appointment_id} className="bg-white border border-red-200 p-3 flex items-start justify-between gap-4">
-                    <div>
-                      <span className="font-black text-xs uppercase text-red-900">{p.patient_name}</span>
-                      <p className="text-[10px] text-slate-600 mt-0.5">{p.ai_summary}</p>
+      {/* Dashboard Stats */}
+      {openSection === "dashboard" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard label={t("Today's Patients")} value={stats?.today_patients || 0} icon={<User className="w-8 h-8" />} />
+          <StatCard label={t("Wait Queue")} value={stats?.total_queued || 0} icon={<Clock className="w-8 h-8" />} accent />
+          <StatCard label={t("Critical Alerts")} value={stats?.high_risk || 0} icon={<AlertTriangle className="w-8 h-8 md:animate-pulse" />} danger={stats?.high_risk > 0} />
+          <StatCard label={t("Completed")} value={stats?.completed || 0} icon={<CheckCircle className="w-8 h-8" />} />
+        </div>
+      )}
+
+      {/* Tabs / Primary Navigation */}
+      <div className="flex border-b border-slate-300 gap-1 md:gap-4 overflow-x-auto pb-px">
+        {[
+          { id: "dashboard", label: "Overview", icon: <LayoutIcon className="w-4 h-4" /> },
+          { id: "queue", label: "Wait Queue", icon: <Clock className="w-4 h-4" /> },
+          { id: "appointments", label: "Appointments", icon: <Calendar className="w-4 h-4" /> },
+          { id: "prescriptions", label: "Issued Rx", icon: <Pill className="w-4 h-4" /> },
+          { id: "family", label: "Family Clinic", icon: <Users className="w-4 h-4" /> },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setOpenSection(tab.id)}
+            className={`flex items-center gap-2 px-6 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all shrink-0 ${openSection === tab.id ? "border-[#0056b3] text-[#0056b3] bg-[#f0f7ff]" : "border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-50"}`}
+          >
+            {tab.icon} {t(tab.label)}
+          </button>
+        ))}
+      </div>
+
+      {openSection === "dashboard" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* High Risk Section */}
+          <div className="lg:col-span-2 space-y-6">
+            <PageSection title="High Risk Updates" icon={<AlertTriangle className="w-5 h-5 text-red-500" />} badge={`${highRisk.length} active`}>
+              {highRisk.length === 0 ? (
+                <div className="p-12 text-center text-slate-400 uppercase font-bold text-xs tracking-widest">{t("No critical updates reported currently.")}</div>
+              ) : (
+                <div className="divide-y divide-slate-200">
+                  {highRisk.map((p) => (
+                    <div key={p.appointment_id} className="p-5 flex flex-col md:flex-row items-start gap-4 hover:bg-red-50/30 transition-colors">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className="px-2 py-0.5 bg-red-600 text-white text-[9px] font-black uppercase tracking-tighter">{t("EMERGENCY")}</span>
+                          <h4 className="font-bold text-slate-900 uppercase text-sm">{p.patient_name}</h4>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">{p.date} • {p.time}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed italic font-medium">"{t(p.ai_summary)}"</p>
+                        <div className="flex flex-wrap gap-2">
+                          {p.symptoms?.map((s: any, idx: number) => (
+                            <span key={idx} className="px-2 py-0.5 bg-white border border-red-200 text-red-700 text-[9px] font-bold uppercase">{t(s.symptom_name)}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={() => setViewingId(p.patient_id)} className="p-1.5 border border-slate-300 bg-white hover:bg-slate-50 text-slate-600" title={t("View Record")}><Eye className="w-4 h-4" /></button>
+                        <button onClick={() => setPrescribing({ patient_id: p.patient_id, patient_name: p.patient_name })} className="p-1.5 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]" title={t("Prescribe")}><Pill className="w-4 h-4" /></button>
+                        <button onClick={() => setReportingApt({
+                            id: p.appointment_id,
+                            patient_id: p.patient_id,
+                            patient_name: p.patient_name,
+                            doctor_name: profile?.name || user.name,
+                            specialty: profile?.specialty || "GP",
+                            date: p.date,
+                            time: p.time,
+                            status: p.priority,
+                            meeting_link: null,
+                            notes: p.symptoms?.map((s: any) => `${s.symptom_name} (${s.duration || 'unknown'})`).join(", ") || "High risk symptoms."
+                        })}
+                          className="p-1.5 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700"
+                          title={t("Generate AI Report based on symptoms")}>
+                          <Sparkles className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => navigate(`/test-call?room=room-${p.appointment_id}`)}
+                          className="px-4 py-3 bg-red-600 text-white text-[10px] font-black uppercase hover:bg-red-700 flex items-center gap-2 shadow-sm">
+                          <Video className="w-3 h-3" /> {t("Join")}
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                      <button onClick={() => setViewingId(p.patient_id)}
-                        className="p-1.5 border border-slate-300 bg-white hover:bg-slate-100"><Eye className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => setReportingApt({
-                          id: p.appointment_id,
-                          patient_id: p.patient_id,
-                          patient_name: p.patient_name,
-                          doctor_name: profile?.name || "Doctor",
-                          specialty: profile?.specialty || "Medicine",
-                          date: p.date,
-                          time: p.time,
-                          status: "Scheduled",
-                          meeting_link: null,
-                          notes: p.symptoms?.map((s: any) => `${s.symptom_name} (${s.duration || 'unknown'})`).join(", ") || "High risk symptoms."
-                      })}
-                        className="p-1.5 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700"
-                        title="Generate AI Report based on symptoms">
-                        <Sparkles className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => navigate(`/test-call?room=room-${p.appointment_id}`)}
-                        className="px-3 py-1.5 bg-red-600 text-white text-[9px] font-black uppercase hover:bg-red-700 flex items-center gap-1">
-                        <Video className="w-3 h-3" /> Join
-                      </button>
-                    </div>
+                  ))}
+                </div>
+              )}
+            </PageSection>
+          </div>
+
+          {/* Quick Stats / Right Column */}
+          <div className="space-y-6">
+             {/* Pending Sync or active notifications */}
+             <PageSection title="Recent Alerts" icon={<Activity className="w-5 h-5 text-[#0056b3]" />} badge={`${notifications.length}`}>
+                {notifications.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 uppercase font-bold text-[10px] tracking-widest">{t("No active alerts.")}</div>
+                ) : (
+                  <div className="divide-y divide-slate-200">
+                    {notifications.slice(0, 5).map((n, i) => (
+                      <div key={i} className="p-4 flex items-start gap-3 hover:bg-slate-50 transition-colors cursor-pointer border-l-2 border-transparent hover:border-[#0056b3]">
+                        <div className="mt-1"><AlertCircle className="w-4 h-4 text-[#0056b3]" /></div>
+                        <div>
+                          <h4 className="font-bold text-slate-800 text-sm">{n.title || t("New Alert")}</h4>
+                          <p className="text-xs text-slate-600 mt-1">{n.message || t("A recent clinical dispatch awaits your attention.")}</p>
+                          <div className="text-[10px] text-slate-400 mt-2 font-bold uppercase">{n.time || t("Just now")}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                )}
+             </PageSection>
           </div>
         </div>
       )}
@@ -926,72 +971,69 @@ export function DoctorDashboard() {
         </div>
       </div>
 
-        </div>
-      )}
-
       {openSection === "queue" && (
-        <PageSection title="Patient Queue" icon={<ClipboardList className="w-5 h-5" />} badge={`${queue.length} pending`}>
-        {queue.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 uppercase font-bold text-xs tracking-widest border-t border-slate-200">
-            No patients in queue.
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-200">
-            {queue.map((p, i) => (
-              <div key={p.appointment_id} className={`p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 ${p.priority === "HIGH" ? "bg-red-50/40" : ""}`}>
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className={`w-9 h-9 flex items-center justify-center font-black text-sm shrink-0
-                    ${p.priority === "HIGH" ? "bg-red-600 text-white" : "bg-[#0056b3] text-white"}`}>
-                    {i + 1}
+        <PageSection title={t("Wait Queue")} icon={<Clock className="w-5 h-5" />} badge={`${queue.length} ${t("in triage")}`}>
+          {queue.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 uppercase font-bold text-xs tracking-widest border-t border-slate-200">
+              {t("Queue is currently empty.")}
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-200">
+              {queue.map((p, i) => (
+                <div key={p.appointment_id} className={`p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 ${p.priority === "HIGH" ? "bg-red-50/40" : ""}`}>
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`w-9 h-9 flex items-center justify-center font-black text-sm shrink-0
+                      ${p.priority === "HIGH" ? "bg-red-600 text-white" : "bg-[#0056b3] text-white"}`}>
+                      {i + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold uppercase text-sm truncate">{p.patient_name}</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">{p.date} {p.time}</div>
+                      {p.symptoms.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {p.symptoms.slice(0, 3).map((s, j) => (
+                            <span key={j} className="px-1.5 py-0.5 bg-yellow-50 border border-yellow-200 text-[9px] font-bold uppercase text-yellow-800">{t(s.symptom_name)}</span>
+                          ))}
+                          {p.symptoms.length > 3 && <span className="text-[9px] text-slate-400">+{p.symptoms.length - 3} {t("more")}</span>}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <div className="font-bold uppercase text-sm truncate">{p.patient_name}</div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">{p.date} {p.time}</div>
-                    {p.symptoms.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {p.symptoms.slice(0, 3).map((s, j) => (
-                          <span key={j} className="px-1.5 py-0.5 bg-yellow-50 border border-yellow-200 text-[9px] font-bold uppercase text-yellow-800">{s.symptom_name}</span>
-                        ))}
-                        {p.symptoms.length > 3 && <span className="text-[9px] text-slate-400">+{p.symptoms.length - 3} more</span>}
-                      </div>
-                    )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`px-2 py-1 text-[9px] font-black border uppercase ${PRIORITY_STYLE[p.priority]}`}>{t(p.priority)}</span>
+                    <button onClick={() => setViewingId(p.patient_id)}
+                      className="p-2 border border-slate-300 bg-white hover:bg-slate-100 text-slate-600">
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => setPrescribing({ patient_id: p.patient_id, patient_name: p.patient_name })}
+                      className="p-2 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]">
+                      <Pill className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => setReportingApt({
+                        id: p.appointment_id,
+                        patient_id: p.patient_id,
+                        patient_name: p.patient_name,
+                        doctor_name: profile?.name || "Doctor",
+                        specialty: p.specialty,
+                        date: p.date,
+                        time: p.time,
+                        status: "Scheduled",
+                        meeting_link: null,
+                        notes: p.symptoms?.map(s => `${s.symptom_name} (${s.duration || 'unknown'})`).join(", ") || t("No specific symptoms on record.")
+                    })}
+                      className="p-2 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700"
+                      title={t("Generate AI Report based on symptoms")}>
+                      <Sparkles className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => navigate(`/test-call?room=room-${p.appointment_id}`)}
+                      className="px-4 py-2 bg-[#0056b3] text-white text-[9px] font-black uppercase tracking-widest hover:bg-blue-800 flex items-center gap-1">
+                      <Video className="w-3 h-3" /> {t("Consult")}
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`px-2 py-1 text-[9px] font-black border uppercase ${PRIORITY_STYLE[p.priority]}`}>{p.priority}</span>
-                  <button onClick={() => setViewingId(p.patient_id)}
-                    className="p-2 border border-slate-300 bg-white hover:bg-slate-100 text-slate-600">
-                    <Eye className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => setPrescribing({ patient_id: p.patient_id, patient_name: p.patient_name })}
-                    className="p-2 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]">
-                    <Pill className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => setReportingApt({
-                      id: p.appointment_id,
-                      patient_id: p.patient_id,
-                      patient_name: p.patient_name,
-                      doctor_name: profile?.name || "Doctor",
-                      specialty: p.specialty,
-                      date: p.date,
-                      time: p.time,
-                      status: "Scheduled",
-                      meeting_link: null,
-                      notes: p.symptoms?.map(s => `${s.symptom_name} (${s.duration || 'unknown'})`).join(", ") || "No specific symptoms on record."
-                  })}
-                    className="p-2 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700"
-                    title="Generate AI Report based on symptoms">
-                    <Sparkles className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => navigate(`/test-call?room=room-${p.appointment_id}`)}
-                    className="px-4 py-2 bg-[#0056b3] text-white text-[9px] font-black uppercase tracking-widest hover:bg-blue-800 flex items-center gap-1">
-                    <Video className="w-3 h-3" /> Consult
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
         </PageSection>
       )}
 
@@ -1042,15 +1084,15 @@ export function DoctorDashboard() {
       )}
 
       {openSection === "appointments" && (
-        <PageSection title="Appointment Schedule" icon={<Calendar className="w-5 h-5" />} badge={`${schedule.length} total`}>
+        <PageSection title={t("Appointment Schedule")} icon={<Calendar className="w-5 h-5" />} badge={`${schedule.length} ${t("total")}`}>
         {schedule.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 uppercase font-bold text-xs tracking-widest">No appointments on record.</div>
+          <div className="p-12 text-center text-slate-400 uppercase font-bold text-xs tracking-widest">{t("No appointments on record.")}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-[#e6f2ff] border-b border-slate-300">
                 <tr>
-                  {["Patient", "Date / Time", "Status", "Actions"].map(h => (
+                  {[t("Patient"), t("Date / Time"), t("Status"), t("Actions")].map(h => (
                     <th key={h} className="px-5 py-3 text-[9px] font-black text-[#0056b3] uppercase tracking-widest">{h}</th>
                   ))}
                 </tr>
@@ -1069,29 +1111,29 @@ export function DoctorDashboard() {
                       </td>
                       <td className="px-5 py-4">
                         {isToday
-                          ? <span className="px-2 py-1 bg-yellow-100 text-yellow-800 border border-yellow-300 text-[9px] font-black uppercase">Today</span>
+                          ? <span className="px-2 py-1 bg-yellow-100 text-yellow-800 border border-yellow-300 text-[9px] font-black uppercase">{t("Today")}</span>
                           : apt.status === "Completed"
-                          ? <span className="px-2 py-1 bg-green-50 text-green-700 border border-green-200 text-[9px] font-black uppercase">Completed</span>
+                          ? <span className="px-2 py-1 bg-green-50 text-green-700 border border-green-200 text-[9px] font-black uppercase">{t("Completed")}</span>
                           : isPast
-                          ? <span className="px-2 py-1 bg-slate-100 text-slate-600 border border-slate-200 text-[9px] font-black uppercase">Past</span>
-                          : <span className="px-2 py-1 bg-[#e6f2ff] text-[#0056b3] border border-blue-200 text-[9px] font-black uppercase">Scheduled</span>
+                          ? <span className="px-2 py-1 bg-slate-100 text-slate-600 border border-slate-200 text-[9px] font-black uppercase">{t("Past")}</span>
+                          : <span className="px-2 py-1 bg-[#e6f2ff] text-[#0056b3] border border-blue-200 text-[9px] font-black uppercase">{t("Scheduled")}</span>
                         }
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
                           <button onClick={() => setViewingId(apt.patient_id)}
-                            className="px-3 py-2 flex items-center gap-1.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-600" title="View History">
+                            className="px-3 py-2 flex items-center gap-1.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-600" title={t("View History")}>
                             <Eye className="w-3.5 h-3.5" />
-                            <span className="text-[9px] font-black uppercase tracking-widest">History</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest">{t("History")}</span>
                           </button>
                           <button onClick={() => setPrescribing({ patient_id: apt.patient_id, patient_name: apt.patient_name })}
-                            className="px-3 py-2 flex items-center gap-1.5 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]" title="Issue Prescription">
+                            className="px-3 py-2 flex items-center gap-1.5 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]" title={t("Prescribe")}>
                             <Pill className="w-3.5 h-3.5" />
-                            <span className="text-[9px] font-black uppercase tracking-widest">Prescribe</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest">{t("Prescribe")}</span>
                           </button>
                            <button onClick={() => setReportingApt(apt)}
                              className="px-3 py-2 flex items-center gap-1.5 border border-green-300 bg-green-50 hover:bg-green-100 text-green-700"
-                             title="Generate AI Report based on symptoms">
+                             title={t("Generate AI Report based on symptoms")}>
                              <Sparkles className="w-3.5 h-3.5" />
                              <span className="text-[9px] font-black uppercase tracking-widest">AI Report</span>
                            </button>
@@ -1118,10 +1160,10 @@ export function DoctorDashboard() {
       )}
 
       {openSection === "prescriptions" && (
-        <PageSection title="Issued Prescriptions" icon={<Pill className="w-5 h-5" />} badge={`${prescriptions.length} issued`}>
+        <PageSection title="Issued Prescriptions" icon={<Pill className="w-5 h-5" />} badge={`${prescriptions.length} ${t("issued")}`}>
         {prescriptions.length === 0 ? (
           <div className="p-12 text-center text-slate-400 uppercase font-bold text-xs tracking-widest border-t border-slate-200">
-            No prescriptions issued yet.
+            {t("No prescriptions issued yet.")}
           </div>
         ) : (
           <div className="divide-y divide-slate-200">
@@ -1140,14 +1182,14 @@ export function DoctorDashboard() {
                   <div className="flex items-center gap-2 shrink-0">
                     {rx.triage_decision && (
                        <span className={`px-2 py-1 text-[9px] font-black border uppercase tracking-widest ${rx.triage_decision === "treat_locally" ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
-                          {rx.triage_decision === "treat_locally" ? "Local" : "Referral"}
+                          {rx.triage_decision === "treat_locally" ? t("Local") : t("Referral")}
                        </span>
                     )}
-                    <span className="px-2 py-1 bg-green-50 text-green-700 border border-green-200 text-[9px] font-black uppercase">Issued</span>
+                    <span className="px-2 py-1 bg-green-50 text-green-700 border border-green-200 text-[9px] font-black uppercase">{t("Issued")}</span>
                     <button
                       onClick={() => setPrescribing({ patient_id: rx.patient_id, patient_name: rx.patient_name })}
                       className="p-1.5 border border-blue-300 bg-[#e6f2ff] hover:bg-blue-100 text-[#0056b3]"
-                      title="Issue new prescription for this patient"
+                      title={t("Issue new prescription for this patient")}
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>

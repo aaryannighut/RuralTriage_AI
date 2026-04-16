@@ -4,6 +4,7 @@ import {
   Video, VideoOff, Mic, MicOff, PhoneOff, Copy, Check, Share2,
   Wifi, WifiOff, Loader2, Users, Plus, LogIn,
 } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 import { API_BASE_URL, toWsUrl } from "../config/runtime";
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -38,6 +39,7 @@ function randomRoomId() {
 // ── Main Test Page ────────────────────────────────────────────────────────────
 
 export function TestCall() {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const urlRoom = searchParams.get("room") ?? "";
   const [phase,  setPhase]  = useState<"lobby" | "call">(urlRoom ? "call" : "lobby");
@@ -69,9 +71,9 @@ export function TestCall() {
           <div className="w-16 h-16 rounded-md bg-[#EEF2FF] flex items-center justify-center mx-auto mb-4">
             <Video className="w-8 h-8 text-[#4F7DF3]" />
           </div>
-          <h1 className="text-2xl font-bold text-[#1E293B]">WebRTC Test Room</h1>
+          <h1 className="text-2xl font-bold text-[#1E293B]">{t("WebRTC Test Room")}</h1>
           <p className="text-[#64748B] text-sm mt-1">
-            Create a room, share the ID, then open another tab and join.
+            {t("Create a room, share the ID, then open another tab and join.")}
           </p>
         </div>
 
@@ -80,14 +82,14 @@ export function TestCall() {
           <div className="bg-white rounded-md border border-[rgba(79,125,243,0.1)] shadow-sm p-6 flex flex-col gap-4">
             <div className="flex items-center gap-2 text-[#4F7DF3]">
               <Plus className="w-5 h-5" />
-              <span className="font-bold text-[#1E293B]">Create Room</span>
+              <span className="font-bold text-[#1E293B]">{t("Create Room")}</span>
             </div>
-            <p className="text-sm text-[#64748B]">Start a new call. You'll get a 6-character room ID to share.</p>
+            <p className="text-sm text-[#64748B]">{t("Start a new call. You'll get a 6-character room ID to share.")}</p>
             <button
               onClick={handleCreate}
               className="mt-auto w-full py-2.5 rounded-md bg-[#4F7DF3] hover:bg-[#3D6DE3] text-white text-sm font-bold transition-colors shadow-[0_2px_10px_rgba(79,125,243,0.3)]"
             >
-              Create &amp; Join
+              {t("Create & Join")}
             </button>
           </div>
 
@@ -95,15 +97,15 @@ export function TestCall() {
           <div className="bg-white rounded-md border border-[rgba(79,125,243,0.1)] shadow-sm p-6 flex flex-col gap-4">
             <div className="flex items-center gap-2 text-[#4F7DF3]">
               <LogIn className="w-5 h-5" />
-              <span className="font-bold text-[#1E293B]">Join Room</span>
+              <span className="font-bold text-[#1E293B]">{t("Join Room")}</span>
             </div>
-            <p className="text-sm text-[#64748B]">Enter a room ID shared by the other person.</p>
+            <p className="text-sm text-[#64748B]">{t("Enter a room ID shared by the other person.")}</p>
             <input
               value={joinInput}
               onChange={e => setJoinInput(e.target.value.toUpperCase())}
               onKeyDown={e => e.key === "Enter" && handleJoin()}
               maxLength={6}
-              placeholder="e.g. AB12CD"
+              placeholder={t("e.g. AB12CD")}
               className="px-3.5 py-2.5 rounded-md border border-[rgba(0,0,0,0.1)] text-sm text-[#1E293B] font-mono tracking-widest text-center outline-none focus:border-[#4F7DF3] focus:ring-2 focus:ring-[#4F7DF3]/20 bg-[#F8FAFC] placeholder:text-[#CBD5E1] placeholder:tracking-normal"
             />
             <button
@@ -111,13 +113,13 @@ export function TestCall() {
               disabled={!joinInput.trim()}
               className="mt-auto w-full py-2.5 rounded-md bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
             >
-              Join
+              {t("Join")}
             </button>
           </div>
         </div>
 
         <p className="text-center text-xs text-[#94A3B8] mt-8">
-          Backend endpoint: <span className="font-mono text-[#4F7DF3]">{BACKEND_LABEL}</span>
+          {t("Backend endpoint")}: <span className="font-mono text-[#4F7DF3]">{BACKEND_LABEL}</span>
         </p>
       </div>
     </div>
@@ -127,6 +129,7 @@ export function TestCall() {
 // ── Call Room ─────────────────────────────────────────────────────────────────
 
 function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
+  const { t } = useLanguage();
   const localRef  = useRef<HTMLVideoElement>(null);
   const remoteRef = useRef<HTMLVideoElement>(null);
   const pcRef     = useRef<RTCPeerConnection | null>(null);
@@ -160,17 +163,17 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
     let ws: WebSocket;
 
     async function start() {
-      addLog("Requesting hardware access...", "info");
+      addLog(t("Requesting hardware access..."), "info");
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        addLog("Video + Audio stream captured", "success");
+        addLog(t("Video + Audio stream captured"), "success");
       } catch {
         try {
           stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          addLog("Camera blocked, using audio only", "info");
+          addLog(t("Camera blocked, using audio only"), "info");
         } catch {
-          addLog("Media access rejected", "error");
+          addLog(t("Media access rejected"), "error");
           setStatus("failed");
           return;
         }
@@ -178,7 +181,7 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
       streamRef.current = stream;
       if (localRef.current) localRef.current.srcObject = stream;
 
-      addLog("Initializing P2P link...", "info");
+      addLog(t("Initializing P2P link..."), "info");
       pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
       pcRef.current = pc;
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
@@ -186,7 +189,7 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
       pc.ontrack = (ev) => {
         if (remoteRef.current) remoteRef.current.srcObject = ev.streams[0];
         setStatus("connected");
-        addLog("Remote stream received ✅", "success");
+        addLog(t("Remote stream received ✅"), "success");
       };
 
       pc.onicecandidate = (ev) => {
@@ -196,18 +199,18 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
       };
 
       pc.onconnectionstatechange = () => {
-        addLog(`P2P State: ${pc.connectionState}`, "info");
+        addLog(`${t("P2P State")}: ${pc.connectionState}`, "info");
         if (pc.connectionState === "failed") setStatus("failed");
         if (pc.connectionState === "disconnected") setStatus("ended");
       };
 
       const wsUrl = `${SIGNAL_WS_BASE}/${roomId}`;
-      addLog(`Signaling: ${wsUrl}`, "info");
+      addLog(`${t("Signaling")}: ${wsUrl}`, "info");
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
-      ws.onopen = () => addLog("WS Handshake active", "success");
-      ws.onerror = () => { addLog("Signal WS error ❌", "error"); setStatus("failed"); };
+      ws.onopen = () => addLog(t("WS Handshake active"), "success");
+      ws.onerror = () => { addLog(t("Signal WS error ❌"), "error"); setStatus("failed"); };
 
       ws.onmessage = async (ev) => {
         const msg = JSON.parse(ev.data as string);
@@ -217,7 +220,7 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
             roleRef.current = msg.role;
             setPeers(msg.peers);
             setStatus("waiting");
-            addLog(`Joined as ${msg.role}`, "info");
+            addLog(`${t("Joined as")} ${msg.role}`, "info");
             if (msg.role === "receiver") {
               ws.send(JSON.stringify({ type: "ready" }));
             }
@@ -225,12 +228,12 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
 
           case "peer-joined":
             setPeers(2);
-            addLog("Peer detected", "success");
+            addLog(t("Peer detected"), "success");
             if (roleRef.current === "initiator") {
               const offer = await pc.createOffer();
               await pc.setLocalDescription(offer);
               ws.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
-              addLog("Offer dispatched", "info");
+              addLog(t("Offer dispatched"), "info");
             } else {
               ws.send(JSON.stringify({ type: "ready" }));
             }
@@ -238,7 +241,7 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
 
           case "ready":
             if (roleRef.current === "initiator" && !pc.localDescription) {
-              addLog("Peer ready, creating offer", "info");
+              addLog(t("Peer ready, creating offer"), "info");
               const offer = await pc.createOffer();
               await pc.setLocalDescription(offer);
               ws.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
@@ -246,12 +249,12 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
             break;
 
           case "offer":
-            addLog("Offer received", "info");
+            addLog(t("Offer received"), "info");
             await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: msg.sdp }));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             ws.send(JSON.stringify({ type: "answer", sdp: answer.sdp }));
-            addLog("Answer dispatched", "info");
+            addLog(t("Answer dispatched"), "info");
             while (candidateQueue.current.length) {
               const cand = candidateQueue.current.shift();
               if (cand) await pc.addIceCandidate(new RTCIceCandidate(cand));
@@ -259,7 +262,7 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
             break;
 
           case "answer":
-            addLog("Answer received", "info");
+            addLog(t("Answer received"), "info");
             await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: msg.sdp }));
             while (candidateQueue.current.length) {
                 const cand = candidateQueue.current.shift();
@@ -277,12 +280,12 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
 
           case "peer-left":
             setStatus("ended");
-            addLog("Peer disconnected", "error");
+            addLog(t("Peer disconnected"), "error");
             break;
 
           case "room-full":
             setStatus("failed");
-            addLog("Room capacity reached ❌", "error");
+            addLog(t("Room capacity reached ❌"), "error");
             break;
         }
       };
@@ -290,7 +293,7 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
 
     start().catch(err => {
       console.error(err);
-      addLog("Setup failed", "error");
+      addLog(t("Setup failed"), "error");
       setStatus("failed");
     });
 
@@ -333,12 +336,12 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
   };
 
   const statusLabel: Record<CallStatus, string> = {
-    idle:       "Idle",
-    connecting: "Connecting…",
-    waiting:    "You're waiting · share the invite link so others can join",
-    connected:  "Connected",
-    failed:     "Connection failed",
-    ended:      "Call ended",
+    idle:       t("Idle"),
+    connecting: t("Connecting…"),
+    waiting:    t("You're waiting · share the invite link so others can join"),
+    connected:  t("Connected"),
+    failed:     t("Connection failed"),
+    ended:      t("Call ended"),
   };
 
   return (
@@ -370,8 +373,8 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
             title="Copy invite link"
           >
             {copiedLink
-              ? <><Check className="w-3.5 h-3.5 text-emerald-400" /><span className="text-emerald-400 text-xs font-semibold">Copied!</span></>
-              : <><Share2 className="w-3.5 h-3.5 text-[#4F7DF3]" /><span className="text-[#4F7DF3] text-xs font-semibold">Share</span></>
+              ? <><Check className="w-3.5 h-3.5 text-emerald-400" /><span className="text-emerald-400 text-xs font-semibold">{t("Copied!")}</span></>
+              : <><Share2 className="w-3.5 h-3.5 text-[#4F7DF3]" /><span className="text-[#4F7DF3] text-xs font-semibold">{t("Share")}</span></>
             }
           </button>
         </div>
@@ -392,7 +395,7 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
           <div className="relative bg-[#1E293B] rounded-md overflow-hidden aspect-video">
             <video ref={localRef} autoPlay playsInline muted className="w-full h-full object-cover" />
             <div className="absolute bottom-2 left-3 text-xs text-white/70 font-semibold bg-black/40 px-2 py-0.5 rounded-full">
-              You {!camOn && "· Camera off"} {!micOn && "· Muted"}
+              {t("You")} {!camOn && t("· Camera off")} {!micOn && t("· Muted")}
             </div>
           </div>
           {/* Remote */}
@@ -402,18 +405,18 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                 <Video className="w-10 h-10 text-white/20" />
                 <span className="text-white/40 text-sm">
-                  {status === "waiting" ? "You're waiting for the other person to join…" : statusLabel[status]}
+                  {status === "waiting" ? t("You're waiting for the other person to join…") : statusLabel[status]}
                 </span>
                 {(status === "waiting" || status === "connecting") && (
                   <div className="mt-1 text-center">
-                    <p className="text-[#94A3B8] text-xs mb-2">Share invite link with the other person:</p>
+                    <p className="text-[#94A3B8] text-xs mb-2">{t("Share invite link with the other person")}:</p>
                     <button onClick={copyLink} className="flex items-center gap-2 mx-auto px-4 py-2.5 bg-[#4F7DF3]/20 border border-[#4F7DF3]/30 rounded-md hover:bg-[#4F7DF3]/30 transition-colors">
                       {copiedLink
-                        ? <><Check className="w-3.5 h-3.5 text-emerald-400" /><span className="text-emerald-400 text-sm font-semibold">Link copied!</span></>
-                        : <><Share2 className="w-3.5 h-3.5 text-[#4F7DF3]" /><span className="text-[#4F7DF3] text-sm font-semibold">Copy invite link</span></>
+                        ? <><Check className="w-3.5 h-3.5 text-emerald-400" /><span className="text-emerald-400 text-sm font-semibold">{t("Link copied!")}</span></>
+                        : <><Share2 className="w-3.5 h-3.5 text-[#4F7DF3]" /><span className="text-[#4F7DF3] text-sm font-semibold">{t("Copy invite link")}</span></>
                       }
                     </button>
-                    <p className="text-[#64748B] text-xs mt-2">Room ID: <span className="font-mono text-[#4F7DF3] font-bold">{roomId}</span></p>
+                    <p className="text-[#64748B] text-xs mt-2">{t("Room ID")}: <span className="font-mono text-[#4F7DF3] font-bold">{roomId}</span></p>
                   </div>
                 )}
               </div>
@@ -426,9 +429,9 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
 
         {/* Debug log */}
         <div className="hidden lg:flex flex-col lg:w-72 bg-[#0D1829] rounded-md border border-white/10 p-4 gap-2 font-mono">
-          <div className="text-xs font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Connection Log</div>
+          <div className="text-xs font-bold text-[#94A3B8] uppercase tracking-widest mb-1">{t("Connection Log")}</div>
           <div className="flex-1 overflow-y-auto space-y-1.5 min-h-0">
-            {logs.length === 0 && <p className="text-[#334155] text-xs italic uppercase">Idle</p>}
+            {logs.length === 0 && <p className="text-[#334155] text-xs italic uppercase">{t("Idle")}</p>}
             {logs.map((l, i) => (
               <div key={i} className="text-[10px] flex gap-2">
                 <span className="text-slate-600 shrink-0">{l.time}</span>
@@ -439,7 +442,7 @@ function CallRoom({ roomId, onEnd }: { roomId: string; onEnd: () => void }) {
             ))}
           </div>
           <div className="pt-2 border-t border-white/10 text-[10px] text-[#334155] uppercase font-black">
-            room: {roomId} · role: {roleRef.current ?? "—"}
+            {t("room")}: {roomId} · {t("role")}: {t(roleRef.current ?? "—")}
           </div>
         </div>
       </div>

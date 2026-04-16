@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Search, Edit2, Trash2, X, Package, ShieldAlert, Pill, Stethoscope, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 type Category = "Diabetes" | "Cholesterol" | "Blood Pressure" | "Antibiotic" | "Pain Relief" | "Supplement" | "Cardiac" | "Thyroid" | "Antacid" | "Other";
 type StockStatus = "In Stock" | "Low Stock" | "Out of Stock";
@@ -36,6 +37,7 @@ const emptyForm = (): Omit<Medicine, "id"> => ({
 });
 
 export function PharmaAdmin() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [pharmacyProfile, setPharmacyProfile] = useState<PharmacyProfile | null>(null);
@@ -104,8 +106,8 @@ export function PharmaAdmin() {
     return (
       <div className="p-12 text-center bg-red-50 border border-red-300 mt-12 max-w-4xl mx-auto flex flex-col items-center">
         <ShieldAlert className="w-12 h-12 text-red-700 mb-4" />
-        <h1 className="text-xl font-bold uppercase text-red-900">Facility Access Denied</h1>
-        <p className="text-sm font-semibold mt-2">Log in with Pharmacy privileges to manage dispensary stock.</p>
+        <h1 className="text-xl font-bold uppercase text-red-900">{t("Facility Access Denied")}</h1>
+        <p className="text-sm font-semibold mt-2">{t("Log in with Pharmacy privileges to manage dispensary stock.")}</p>
       </div>
     );
   }
@@ -116,11 +118,11 @@ export function PharmaAdmin() {
       {/* Header */}
       <div className="border border-slate-300 bg-slate-50 p-6 flex flex-col md:flex-row justify-between gap-4">
         <div>
-           <h1 className="text-2xl font-bold uppercase tracking-tight">Dispensary Logistics</h1>
-           <p className="text-sm font-semibold text-slate-600 mt-1 uppercase tracking-wide">Facility: {pharmacyProfile?.store_name || "UNREGISTERED"}</p>
+           <h1 className="text-2xl font-bold uppercase tracking-tight">{t("Dispensary Logistics")}</h1>
+           <p className="text-sm font-semibold text-slate-600 mt-1 uppercase tracking-wide">{t("Facility")}: {t(pharmacyProfile?.store_name || "UNREGISTERED")}</p>
         </div>
         <button onClick={() => setAddOpen(true)} className="bg-[#0056b3] text-white px-5 py-2 font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-blue-800 self-start border border-[#0056b3]">
-           <Plus className="w-4 h-4"/> Log Incoming
+           <Plus className="w-4 h-4"/> {t("Log Incoming")}
         </button>
       </div>
 
@@ -129,14 +131,14 @@ export function PharmaAdmin() {
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
             <div className="bg-white border-2 border-[#0056b3] w-full max-w-2xl">
                <div className="bg-[#0056b3] text-white p-4 font-bold uppercase flex justify-between">
-                  <span>Requisition Registration (Mock)</span>
+                  <span>{t("Requisition Registration (Mock)")}</span>
                   <button onClick={() => setAddOpen(false)}><X className="w-5 h-5"/></button>
                </div>
                <div className="p-12 text-center text-slate-500 font-bold uppercase">
-                  (Modal UI Flattened: Connect backend mutation form here)
+                  {t("(Modal UI Flattened: Connect backend mutation form here)")}
                </div>
                <div className="bg-slate-100 p-4 mt-4 border-t border-slate-300 flex justify-end">
-                  <button onClick={() => setAddOpen(false)} className="px-6 py-2 bg-white border border-slate-300 text-slate-900 font-bold uppercase">Close</button>
+                  <button onClick={() => setAddOpen(false)} className="px-6 py-2 bg-white border border-slate-300 text-slate-900 font-bold uppercase">{t("Close")}</button>
                </div>
             </div>
          </div>
@@ -149,12 +151,12 @@ export function PharmaAdmin() {
             <input 
                value={search} onChange={e => setSearch(e.target.value)}
                className="w-full pl-9 pr-3 py-2 border border-slate-300 bg-white text-sm focus:outline-none focus:border-[#0056b3] uppercase"
-               placeholder="SEARCH NOMENCLATURE..."
+               placeholder={t("SEARCH NOMENCLATURE...")}
             />
          </div>
          <select value={filterCategory} onChange={e => setFilterCategory(e.target.value as Category | "All")} className="p-2 border border-slate-300 bg-white text-sm focus:outline-none uppercase font-bold w-full sm:w-auto">
-            <option value="All">All Categories</option>
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            <option value="All">{t("All Categories")}</option>
+            {CATEGORIES.map(c => <option key={c} value={c}>{t(c)}</option>)}
          </select>
       </div>
 
@@ -162,46 +164,46 @@ export function PharmaAdmin() {
       <div className="border border-slate-300 bg-white overflow-x-auto">
          {loading ? (
             <div className="p-12 text-center text-[#0056b3] font-bold uppercase flex justify-center gap-2 items-center">
-              <Loader2 className="w-5 h-5 animate-spin" /> Verifying Manifest...
+              <Loader2 className="w-5 h-5 animate-spin" /> {t("Verifying Manifest...")}
             </div>
          ) : (
             <table className="w-full text-left text-sm whitespace-nowrap">
                <thead className="bg-[#e6f2ff] border-b border-slate-300 hidden sm:table-header-group">
                   <tr>
-                     <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">Item Identifier</th>
-                     <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">Category</th>
-                     <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">Stock Lvl</th>
-                     <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">Pricing</th>
-                     <th className="p-3 uppercase font-bold text-xs text-[#0056b3] text-right">Ops</th>
+                     <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">{t("Item Identifier")}</th>
+                     <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">{t("Category")}</th>
+                     <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">{t("Stock Lvl")}</th>
+                     <th className="p-3 uppercase font-bold text-xs text-[#0056b3]">{t("Pricing")}</th>
+                     <th className="p-3 uppercase font-bold text-xs text-[#0056b3] text-right">{t("Ops")}</th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-slate-300 block sm:table-row-group">
                   {filtered.map(m => (
                      <tr key={m.id} className="hover:bg-slate-50 block sm:table-row border-b border-slate-300 sm:border-0">
                         <td className="p-3 border-r border-slate-200 block sm:table-cell">
-                           <div className="font-bold text-slate-900 text-base">{m.name}</div>
-                           <div className="text-[10px] text-slate-500 font-bold uppercase mt-1 opacity-80">{m.brand} • {m.form}</div>
-                           {m.prescription_required && <div className="text-[10px] text-red-600 font-bold uppercase mt-1">Rx REQ</div>}
+                           <div className="font-bold text-slate-900 text-base">{t(m.name)}</div>
+                           <div className="text-[10px] text-slate-500 font-bold uppercase mt-1 opacity-80">{t(m.brand)} • {t(m.form)}</div>
+                           {m.prescription_required && <div className="text-[10px] text-red-600 font-bold uppercase mt-1">{t("Rx REQ")}</div>}
                         </td>
                         <td className="p-3 border-r border-slate-200 block sm:table-cell">
-                           <span className="font-bold uppercase tracking-wide text-slate-700 bg-slate-200 px-2 py-0.5 text-xs inline-block mb-1">{m.category}</span>
+                           <span className="font-bold uppercase tracking-wide text-slate-700 bg-slate-200 px-2 py-0.5 text-xs inline-block mb-1">{t(m.category)}</span>
                         </td>
                         <td className="p-3 border-r border-slate-200 block sm:table-cell">
                            <span className={`px-2 py-1 text-[10px] font-bold border uppercase tracking-wider ${getStockStatusStyle(m.stock, m.min_stock)}`}>
-                             {getStockStatusStr(m.stock, m.min_stock)}: {m.stock}
+                             {t(getStockStatusStr(m.stock, m.min_stock))}: {m.stock}
                            </span>
                         </td>
                         <td className="p-3 border-r border-slate-200 block sm:table-cell">
                            <div className="font-bold text-slate-900">₹{m.price}</div>
                         </td>
                         <td className="p-3 text-right block sm:table-cell">
-                           <button className="p-2 border border-slate-300 hover:bg-slate-100 text-slate-700 inline-block mr-2 font-bold uppercase text-[10px]">EDIT</button>
-                           <button className="p-2 border border-red-300 hover:bg-red-50 text-red-600 inline-block font-bold uppercase text-[10px]">RM</button>
+                           <button className="p-2 border border-slate-300 hover:bg-slate-100 text-slate-700 inline-block mr-2 font-bold uppercase text-[10px]">{t("EDIT")}</button>
+                           <button className="p-2 border border-red-300 hover:bg-red-50 text-red-600 inline-block font-bold uppercase text-[10px]">{t("RM")}</button>
                         </td>
                      </tr>
                   ))}
                   {filtered.length === 0 && (
-                     <tr><td colSpan={5} className="p-8 text-center text-slate-500 font-bold uppercase">No records found.</td></tr>
+                     <tr><td colSpan={5} className="p-8 text-center text-slate-500 font-bold uppercase">{t("No records found.")}</td></tr>
                   )}
                </tbody>
             </table>

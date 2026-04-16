@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, FileText, IndianRupee, History, LayoutDashboard
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 interface RxItem {
   medicine: string;
@@ -65,6 +66,7 @@ const CATEGORIES: Category[] = [
 ];
 
 export function PharmacistInventory() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -119,7 +121,7 @@ export function PharmacistInventory() {
     if (!user.userId) return;
     try {
       const profRes = await fetch(`/pharmacies/user/${user.userId}`);
-      if (!profRes.ok) throw new Error("Pharmacy profile not found.");
+      if (!profRes.ok) throw new Error(t("Pharmacy profile not found."));
       const profData = await profRes.json();
       setProfile(profData);
 
@@ -178,7 +180,7 @@ export function PharmacistInventory() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
       });
-      if (!res.ok) throw new Error("Failed to update dispensation status.");
+      if (!res.ok) throw new Error(t("Failed to update dispensation status."));
       
       await fetchData();
       setSelectedRx(null);
@@ -227,7 +229,7 @@ export function PharmacistInventory() {
                total_billed: billedAmt
             })
         });
-        if (!res.ok) throw new Error("Failed to finalize order.");
+        if (!res.ok) throw new Error(t("Failed to finalize order."));
         
         await fetchData();
         setPreparingOrder(false);
@@ -280,10 +282,10 @@ export function PharmacistInventory() {
          // Update
          const res = await fetch(`/pharmacies/pharmacy/inventory/update/${invFormData.id}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ quantity: q, price: p, expiry_date: invFormData.expiry_date })
          });
-         if (!res.ok) throw new Error("Failed to update inventory.");
+         if (!res.ok) throw new Error(t("Failed to update inventory."));
       } else {
          // Add
          const res = await fetch(`/pharmacies/pharmacy/inventory/add`, {
@@ -302,7 +304,7 @@ export function PharmacistInventory() {
                 manufacturer: invFormData.manufacturer
             })
          });
-         if (!res.ok) throw new Error("Failed to add inventory.");
+         if (!res.ok) throw new Error(t("Failed to add inventory."));
       }
       setShowInvModal(false);
       fetchData();
@@ -314,10 +316,10 @@ export function PharmacistInventory() {
   };
 
   const handleDeleteInventory = async (invId: number) => {
-    if (!confirm("Are you sure you want to remove this medication from inventory?")) return;
+    if (!confirm(t("Are you sure you want to remove this medication from inventory?"))) return;
     try {
       const res = await fetch(`/pharmacies/pharmacy/inventory/delete/${invId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete inventory.");
+      if (!res.ok) throw new Error(t("Failed to delete inventory."));
       fetchData();
     } catch(err: any) {
       alert(err.message);
@@ -352,7 +354,7 @@ export function PharmacistInventory() {
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
       <Loader2 className="w-10 h-10 animate-spin text-[#0056b3]" />
-      <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Syncing Dispensary Mainframe...</span>
+      <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{t("Syncing Dispensary Mainframe...")}</span>
     </div>
   );
 
@@ -366,18 +368,18 @@ export function PharmacistInventory() {
             <Building2 className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900">{profile?.store_name}</h1>
+            <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900">{t(profile?.store_name || "")}</h1>
             <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-              <span className="flex items-center gap-1"><ShieldAlert className="w-3 h-3 text-[#0056b3]"/> License: {profile?.license_number}</span>
-              <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-[#0056b3]"/> {profile?.city}, {profile?.state}</span>
+              <span className="flex items-center gap-1"><ShieldAlert className="w-3 h-3 text-[#0056b3]"/> {t("License")}: {profile?.license_number}</span>
+              <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-[#0056b3]"/> {t(profile?.city || "")}, {t(profile?.state || "")}</span>
             </div>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
            <button 
-             onClick={() => alert("Connecting to RuralTriage Help Desk... \n\nEmergency Support: +91-90000-00000")}
-             className="px-4 py-2 bg-[#0056b3] text-white text-[10px] font-black uppercase shadow-md hover:bg-blue-800 transition-all">Support Desk</button>
+             onClick={() => alert(t("Connecting to RuralTriage Help Desk... \n\nEmergency Support: +91-90000-00000"))}
+             className="px-4 py-2 bg-[#0056b3] text-white text-[10px] font-black uppercase shadow-md hover:bg-blue-800 transition-all">{t("Support Desk")}</button>
         </div>
       </div>
 
@@ -392,7 +394,7 @@ export function PharmacistInventory() {
           <div key={i} className={`bg-white border-l-4 border-slate-600 border border-slate-200 p-4 shadow-sm group hover:shadow-md transition-all`}>
             <div className="flex justify-between items-center">
               <div className="truncate">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t(stat.label)}</p>
                 <div className={`text-xl font-black mt-1 text-slate-900`}>{stat.val}</div>
               </div>
               <stat.icon className={`w-6 h-6 text-slate-100 flex-shrink-0`} />
@@ -401,23 +403,21 @@ export function PharmacistInventory() {
         ))}
       </div>
 
-
-
       <div className="space-y-4">
            {/* Controls */}
            <div className="bg-white border border-slate-300 p-4 flex flex-col md:flex-row gap-4 items-center shadow-sm">
-              <div className="relative flex-1 container">
+              <div className="relative flex-1 w-full">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                  <input 
-                   type="text" placeholder="QUERY INVENTORY REGISTRY..." value={search} onChange={e => setSearch(e.target.value)}
+                   type="text" placeholder={t("QUERY INVENTORY REGISTRY...")} value={search} onChange={e => setSearch(e.target.value)}
                    className="w-full pl-10 pr-4 py-3 border border-slate-200 bg-slate-50 text-xs font-black uppercase outline-none focus:border-[#0056b3] transition-all"
                  />
               </div>
               <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0 flex-wrap">
-                 <button onClick={() => setFilterLowStock(!filterLowStock)} className={`px-4 py-3 border text-[10px] font-black uppercase tracking-widest transition-all ${filterLowStock ? 'bg-red-50 border-red-500 text-red-600' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}>Alerts <span className="text-red-500 ml-1">({stats.low_stock})</span></button>
-                 <button onClick={() => setFilterExpiring(!filterExpiring)} className={`px-4 py-3 border text-[10px] font-black uppercase tracking-widest transition-all ${filterExpiring ? 'bg-yellow-50 border-yellow-500 text-yellow-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}>Expiring</button>
+                 <button onClick={() => setFilterLowStock(!filterLowStock)} className={`px-4 py-3 border text-[10px] font-black uppercase tracking-widest transition-all ${filterLowStock ? 'bg-red-50 border-red-500 text-red-600' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}>{t("Alerts")} <span className="text-red-500 ml-1">({stats.low_stock})</span></button>
+                 <button onClick={() => setFilterExpiring(!filterExpiring)} className={`px-4 py-3 border text-[10px] font-black uppercase tracking-widest transition-all ${filterExpiring ? 'bg-yellow-50 border-yellow-500 text-yellow-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}>{t("Expiring")}</button>
                  <button onClick={openAddModal} className="flex-1 md:flex-none px-6 py-3 bg-[#0056b3] text-white font-black uppercase text-[10px] tracking-widest shadow-md flex items-center justify-center gap-2 whitespace-nowrap hover:bg-blue-800">
-                    <Plus className="w-4 h-4" /> Add Medication
+                    <Plus className="w-4 h-4" /> {t("Add Medication")}
                  </button>
                </div>
            </div>
@@ -428,27 +428,27 @@ export function PharmacistInventory() {
                  <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-900 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
                        <tr>
-                          <th className="px-6 py-4">Clinical Naming</th>
-                          <th className="px-6 py-4 text-center">Operational Stock</th>
-                          <th className="px-6 py-4">Unit Pricing</th>
-                          <th className="px-6 py-4">Expiry</th>
-                          <th className="px-6 py-4 text-right">Actions</th>
+                          <th className="px-6 py-4">{t("Clinical Naming")}</th>
+                          <th className="px-6 py-4 text-center">{t("Operational Stock")}</th>
+                          <th className="px-6 py-4">{t("Unit Pricing")}</th>
+                          <th className="px-6 py-4">{t("Expiry")}</th>
+                          <th className="px-6 py-4 text-right">{t("Actions")}</th>
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                        {filteredInv.map(m => (
                           <tr key={m.id} className="hover:bg-slate-50 transition-colors group">
                              <td className="px-6 py-5">
-                                <div className="font-black text-slate-900 uppercase text-sm">{m.name}</div>
-                                <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-wide">{m.brand || "Generics"} • {m.form} • {m.dose}</div>
-                                <div className="text-[9px] font-black text-[#0056b3] uppercase tracking-widest mt-1 opacity-60">{m.manufacturer}</div>
+                                <div className="font-black text-slate-900 uppercase text-sm">{t(m.name)}</div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-wide">{t(m.brand || "Generics")} • {t(m.form)} • {t(m.dose)}</div>
+                                <div className="text-[9px] font-black text-[#0056b3] uppercase tracking-widest mt-1 opacity-60">{t(m.manufacturer)}</div>
                              </td>
                              <td className="px-6 py-5 text-center">
                                 <div className="flex flex-col items-center gap-1">
                                    <div className={`px-4 py-1 text-[11px] font-black border uppercase tracking-tighter ${m.stock < 10 ? "bg-red-50 text-red-600 border-red-200" : "bg-[#e8f5e9] text-green-700 border-green-200"}`}>
-                                      {m.stock} Units
+                                      {m.stock} {t("Units")}
                                    </div>
-                                   {m.stock < 10 && <span className="text-[8px] font-black text-white bg-red-600 px-2 py-0.5 rounded-sm uppercase tracking-widest animate-pulse">Low Stock</span>}
+                                   {m.stock < 10 && <span className="text-[8px] font-black text-white bg-red-600 px-2 py-0.5 rounded-sm uppercase tracking-widest animate-pulse">{t("Low Stock")}</span>}
                                 </div>
                              </td>
                              <td className="px-6 py-5">
@@ -459,8 +459,8 @@ export function PharmacistInventory() {
                              </td>
                              <td className="px-6 py-5">
                                 <div className="flex flex-col items-start gap-1">
-                                   <span className="text-[10px] font-black uppercase text-slate-500">{m.expiry || "N/A"}</span>
-                                   {isExpiringSoon(m.expiry) && <span className="text-[8px] font-black text-yellow-800 bg-yellow-200 px-2 py-0.5 rounded-sm uppercase tracking-widest animate-pulse">Expiring Soon</span>}
+                                   <span className="text-[10px] font-black uppercase text-slate-500">{t(m.expiry || "N/A")}</span>
+                                   {isExpiringSoon(m.expiry) && <span className="text-[8px] font-black text-yellow-800 bg-yellow-200 px-2 py-0.5 rounded-sm uppercase tracking-widest animate-pulse">{t("Expiring Soon")}</span>}
                                 </div>
                              </td>
                              <td className="px-6 py-5 text-right">
@@ -477,71 +477,69 @@ export function PharmacistInventory() {
            </div>
         </div>
 
-
-
       {/* ADD/EDIT INVENTORY MODAL */}
       {showInvModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white border-4 border-slate-900 shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
              <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
-                <h3 className="text-sm font-black uppercase tracking-widest">{invFormData.id ? "Update Operational Stock" : "Registry Add: New Medication"}</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest">{invFormData.id ? t("Update Operational Stock") : t("Registry Add: New Medication")}</h3>
                 <button onClick={() => setShowInvModal(false)} className="hover:text-red-400 transition-colors"><X className="w-5 h-5"/></button>
              </div>
              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Clinical Designation</label>
-                  <input type="text" value={invFormData.medicine_name} onChange={e => setInvFormData({...invFormData, medicine_name: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50 disabled:cursor-not-allowed" placeholder="E.g. PARACETAMOL"/>
+                  <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">{t("Clinical Designation")}</label>
+                  <input type="text" value={invFormData.medicine_name} onChange={e => setInvFormData({...invFormData, medicine_name: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50 disabled:cursor-not-allowed" placeholder={t("E.g. PARACETAMOL")}/>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                    <div>
-                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Brand Name</label>
-                     <input type="text" value={invFormData.brand} onChange={e => setInvFormData({...invFormData, brand: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50" placeholder="E.g. Calpol"/>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">{t("Brand Name")}</label>
+                     <input type="text" value={invFormData.brand} onChange={e => setInvFormData({...invFormData, brand: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50" placeholder={t("E.g. Calpol")}/>
                    </div>
                    <div>
-                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Drug Category</label>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">{t("Drug Category")}</label>
                      <select value={invFormData.category} onChange={e => setInvFormData({...invFormData, category: e.target.value as Category})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50">
-                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        {CATEGORIES.map(c => <option key={c} value={c}>{t(c)}</option>)}
                      </select>
                    </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                    <div>
-                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Dosage</label>
-                     <input type="text" value={invFormData.dose} onChange={e => setInvFormData({...invFormData, dose: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50" placeholder="E.g. 500 MG"/>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">{t("Dosage")}</label>
+                     <input type="text" value={invFormData.dose} onChange={e => setInvFormData({...invFormData, dose: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50" placeholder={t("E.g. 500 MG")}/>
                    </div>
                    <div>
-                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Form (Format)</label>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">{t("Form (Format)")}</label>
                      <select value={invFormData.form} onChange={e => setInvFormData({...invFormData, form: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50">
-                        <option value="Tablet">Tablet</option>
-                        <option value="Syrup">Syrup</option>
-                        <option value="Injection">Injection</option>
-                        <option value="Capsule">Capsule</option>
-                        <option value="Ointment">Ointment</option>
-                        <option value="Drops">Drops</option>
-                        <option value="Powder">Powder</option>
+                        <option value="Tablet">{t("Tablet")}</option>
+                        <option value="Syrup">{t("Syrup")}</option>
+                        <option value="Injection">{t("Injection")}</option>
+                        <option value="Capsule">{t("Capsule")}</option>
+                        <option value="Ointment">{t("Ointment")}</option>
+                        <option value="Drops">{t("Drops")}</option>
+                        <option value="Powder">{t("Powder")}</option>
                      </select>
                    </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Manufacturer</label>
-                  <input type="text" value={invFormData.manufacturer} onChange={e => setInvFormData({...invFormData, manufacturer: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50" placeholder="E.g. GSK Ltd"/>
+                  <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">{t("Manufacturer")}</label>
+                  <input type="text" value={invFormData.manufacturer} onChange={e => setInvFormData({...invFormData, manufacturer: e.target.value})} disabled={!!invFormData.id} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none disabled:opacity-50" placeholder={t("E.g. GSK Ltd")}/>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                    <div>
-                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Stock Quantity</label>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">{t("Stock Quantity")}</label>
                      <input type="number" value={invFormData.quantity} onChange={e => setInvFormData({...invFormData, quantity: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none" min="0"/>
                    </div>
                    <div>
-                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Unit Price (₹)</label>
+                     <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">{t("Unit Price (₹)")}</label>
                      <input type="number" value={invFormData.price} onChange={e => setInvFormData({...invFormData, price: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none" min="0" step="0.01"/>
                    </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Expiry Horizon (YYYY-MM)</label>
+                  <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">{t("Expiry Horizon (YYYY-MM)")}</label>
                   <input type="month" value={invFormData.expiry_date} onChange={e => setInvFormData({...invFormData, expiry_date: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-xs font-black uppercase focus:border-[#0056b3] outline-none"/>
                 </div>
                 <button onClick={handleSaveInventory} disabled={savingInv || !invFormData.medicine_name} className="w-full py-4 mt-2 bg-[#0056b3] text-white font-black uppercase tracking-widest text-xs shadow-md hover:bg-blue-800 transition-all flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed">
-                  {savingInv ? <Loader2 className="w-4 h-4 animate-spin"/> : "Execute Registry Commit"}
+                   {savingInv ? <Loader2 className="w-4 h-4 animate-spin"/> : t("Execute Registry Commit")}
                 </button>
              </div>
           </div>

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Copy, Check, MessageCircle, Plus, LogIn, Send, Users, ArrowLeft,
 } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 import { toWsUrl } from "../config/runtime";
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -39,6 +40,7 @@ function ChatRoom({
   userName: string;
   onLeave: () => void;
 }) {
+  const { t } = useLanguage();
   const wsRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -99,7 +101,7 @@ function ChatRoom({
         id: crypto.randomUUID(),
         type: "system",
         sender: "",
-        text: "Disconnected from chat.",
+        text: t("Disconnected from chat."),
         time: timestamp(),
       });
     };
@@ -152,18 +154,18 @@ function ChatRoom({
           <button
             onClick={onLeave}
             className="p-2 rounded-md hover:bg-gray-100 transition-colors text-[#64748B]"
-            title="Leave chat"
+            title={t("Leave chat")}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg text-[#1E293B] font-semibold">Chat Room</h1>
+              <h1 className="text-lg text-[#1E293B] font-semibold">{t("Chat Room")}</h1>
               <span className={`w-2 h-2 rounded-full ${connected ? "bg-emerald-400" : "bg-rose-400"}`} />
             </div>
             <div className="flex items-center gap-2 text-xs text-[#64748B]">
               <Users className="w-3.5 h-3.5" />
-              <span>{peerCount} in room</span>
+              <span>{peerCount} {t("in room")}</span>
             </div>
           </div>
         </div>
@@ -172,7 +174,7 @@ function ChatRoom({
         <button
           onClick={copyRoomId}
           className="flex items-center gap-2 px-4 py-2 bg-[#4F7DF3]/10 rounded-md hover:bg-[#4F7DF3]/20 transition-colors"
-          title="Copy room code"
+          title={t("Copy room code")}
         >
           <span className="text-[#4F7DF3] font-mono font-bold text-sm tracking-wider">{roomId}</span>
           {copied
@@ -187,8 +189,8 @@ function ChatRoom({
         {messages.length === 0 && (
           <div className="text-center py-16 text-[#94A3B8]">
             <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-40" />
-            <p className="font-medium">No messages yet</p>
-            <p className="text-sm mt-1">Share the room code <span className="font-mono font-bold text-[#4F7DF3]">{roomId}</span> to invite someone.</p>
+            <p className="font-medium">{t("No messages yet")}</p>
+            <p className="text-sm mt-1">{t("Share the room code")} <span className="font-mono font-bold text-[#4F7DF3]">{roomId}</span> {t("to invite someone.")}</p>
           </div>
         )}
 
@@ -241,7 +243,7 @@ function ChatRoom({
             type="text"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder={connected ? "Type a message…" : "Connecting…"}
+            placeholder={connected ? t("Type a message…") : t("Connecting…")}
             disabled={!connected}
             className="flex-1 px-4 py-3 rounded-md bg-[#F1F5F9] border border-gray-200 focus:outline-none focus:border-[#4F7DF3] focus:ring-2 focus:ring-[#4F7DF3]/20 text-sm text-[#1E293B] placeholder-[#94A3B8] disabled:opacity-50 transition-all"
             autoFocus
@@ -262,6 +264,7 @@ function ChatRoom({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export function TestChat() {
+  const { t } = useLanguage();
   const [phase, setPhase] = useState<"lobby" | "chat">("lobby");
   const [roomId, setRoomId] = useState("");
   const [joinInput, setJoinInput] = useState("");
@@ -299,20 +302,20 @@ export function TestChat() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-md bg-[#4F7DF3]/10 flex items-center justify-center">
             <MessageCircle className="w-8 h-8 text-[#4F7DF3]" />
           </div>
-          <h1 className="text-2xl font-bold text-[#1E293B]">Test Chat</h1>
+          <h1 className="text-2xl font-bold text-[#1E293B]">{t("Test Chat")}</h1>
           <p className="text-[#64748B] mt-1 text-sm">
-            Create a room or join one with a code to start chatting.
+            {t("Create a room or join one with a code to start chatting.")}
           </p>
         </div>
 
         {/* Name input */}
         <div>
-          <label className="block text-sm font-medium text-[#1E293B] mb-1.5">Your Name</label>
+          <label className="block text-sm font-medium text-[#1E293B] mb-1.5">{t("Your Name")}</label>
           <input
             type="text"
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
-            placeholder="Enter your name"
+            placeholder={t("Enter your name")}
             maxLength={30}
             className="w-full px-4 py-3 rounded-md bg-white border border-gray-200 focus:outline-none focus:border-[#4F7DF3] focus:ring-2 focus:ring-[#4F7DF3]/20 text-sm text-[#1E293B] placeholder-[#94A3B8] transition-all"
           />
@@ -325,13 +328,13 @@ export function TestChat() {
           className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-[#4F7DF3] text-white rounded-md hover:bg-[#3D6DE3] disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-semibold shadow-sm"
         >
           <Plus className="w-5 h-5" />
-          Create Chat Room
+          {t("Create Chat Room")}
         </button>
 
         {/* Divider */}
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-[#94A3B8] font-medium">OR JOIN</span>
+          <span className="text-xs text-[#94A3B8] font-medium">{t("OR JOIN")}</span>
           <div className="flex-1 h-px bg-gray-200" />
         </div>
 
@@ -341,7 +344,7 @@ export function TestChat() {
             type="text"
             value={joinInput}
             onChange={(e) => setJoinInput(e.target.value.toUpperCase())}
-            placeholder="Enter room code"
+            placeholder={t("Enter room code")}
             maxLength={6}
             className="flex-1 px-4 py-3 rounded-md bg-white border border-gray-200 focus:outline-none focus:border-[#4F7DF3] focus:ring-2 focus:ring-[#4F7DF3]/20 text-sm font-mono tracking-widest text-center text-[#1E293B] placeholder-[#94A3B8] uppercase transition-all"
             onKeyDown={(e) => { if (e.key === "Enter") handleJoin(); }}
@@ -352,7 +355,7 @@ export function TestChat() {
             className="px-6 py-3 bg-[#1E293B] text-white rounded-md hover:bg-[#0F172A] disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-semibold flex items-center gap-2"
           >
             <LogIn className="w-5 h-5" />
-            Join
+            {t("Join")}
           </button>
         </div>
       </div>

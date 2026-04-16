@@ -32,7 +32,7 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
-      ...['/offer', '/health', '/auth', '/doctors', '/patients', '/health-records', '/pharmacies', '/appointments', '/pharmacists', '/medicines', '/doctor'].reduce((acc, path) => ({
+      ...['/offer', '/health', '/auth', '/doctors', '/patients', '/health-records', '/pharmacies', '/appointments', '/pharmacists', '/medicines', '/doctor', '/translate'].reduce((acc, path) => ({
         ...acc,
         [path]: {
           target: 'http://localhost:8000',
