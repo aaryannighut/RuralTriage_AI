@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { Search, MapPin, Phone, Clock, FileText, Loader2, AlertCircle, Building2, ChevronRight, ShieldAlert } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
