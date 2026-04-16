@@ -119,7 +119,9 @@ if not root_logger.handlers:
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     root_logger.addHandler(handler)
-root_logger.setLevel(settings.LOG_LEVEL)
+# Safely set logging level (handle lowercase and invalid strings)
+log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+root_logger.setLevel(log_level)
 
 # --- CORE ENDPOINTS ---
 
