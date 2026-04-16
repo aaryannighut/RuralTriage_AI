@@ -1,1 +1,1 @@
-web: gunicorn --chdir backend -w 4 -k uvicorn.workers.UvicornWorker app.main:app
+web: gunicorn -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --pythonpath backend app.main:app
